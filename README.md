@@ -74,9 +74,9 @@ Bip32Node masterNode = Bip44Wallet.createMasterKeyPair(seed.toArrayUnsafe());
 // Derive XDAG key pair (account=0, addressIndex=0)
 Bip32Node xdagNode = Bip44Wallet.deriveXdagKeyPair(masterNode, 0, 0);
 
-// Generate XDAG address
-Bytes20 address = AddressUtils.toBytesAddress(xdagNode.keyPair());
-System.out.println("Address: " + address.toHexString());
+// Generate XDAG address (Base58Check encoded)
+String address = AddressUtils.toBase58Address(xdagNode.keyPair());
+System.out.println("Address: " + address);
 ```
 
 ### Sign and Verify Messages
@@ -159,11 +159,14 @@ ECPoint recovered = Sign.recoverPublicKeyFromSignature(v, r, s, messageHash);
 
 #### `AddressUtils`
 ```java
-// Generate address from key pair
-Bytes20 address = AddressUtils.toBytesAddress(keyPair);
+// Generate Base58Check encoded XDAG address from key pair
+String address = AddressUtils.toBase58Address(keyPair);
 
-// Validate address format
-boolean valid = AddressUtils.isValidAddress(addressString);
+// Convert Base58 address back to bytes
+Bytes addressBytes = AddressUtils.fromBase58Address(address);
+
+// Validate Base58Check address format
+boolean valid = AddressUtils.isValidAddress(address);
 ```
 
 ## 🏗️ Project Structure
