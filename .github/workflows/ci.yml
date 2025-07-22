@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+    
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    
+    # Get project info for consistent naming
+    - name: Get project info
+      id: project
+      run: |
+        echo "VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+        echo "ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)" >> $GITHUB_OUTPUT
+    
+    - name: Compile project
+      run: mvn clean compile
+    
+    - name: Run tests
+      run: mvn test
+    
+    - name: Generate test report
+      run: mvn jacoco:report
+    
+    - name: Build package
+      run: mvn package -DskipTests
+    
+    # Upload test results for all builds (helps with debugging)
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ steps.project.outputs.ARTIFACT_ID }}-test-results-jdk21-${{ steps.project.outputs.VERSION }}-${{ github.run_number }}
+        path: target/surefire-reports/
+    
+    # Upload code coverage report
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./target/site/jacoco/jacoco.xml
+        fail_ci_if_error: false
+        verbose: true
+    
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+    
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    
+    - name: Get project info
+      id: project
+      run: |
+        echo "VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+        echo "ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)" >> $GITHUB_OUTPUT
+    
+    - name: Build with Maven
+      run: mvn clean package -DskipTests
+    
+    - name: Generate JavaDoc
+      run: mvn javadoc:javadoc
+    
+    # Upload release artifacts
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.project.outputs.ARTIFACT_ID }}-${{ steps.project.outputs.VERSION }}
+        path: |
+          target/${{ steps.project.outputs.ARTIFACT_ID }}-${{ steps.project.outputs.VERSION }}.jar
+          target/${{ steps.project.outputs.ARTIFACT_ID }}-${{ steps.project.outputs.VERSION }}-sources.jar
+          target/${{ steps.project.outputs.ARTIFACT_ID }}-${{ steps.project.outputs.VERSION }}-javadoc.jar
+    
+    # Upload JavaDoc
+    - name: Upload JavaDoc
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.project.outputs.ARTIFACT_ID }}-javadoc-${{ steps.project.outputs.VERSION }}
+        path: target/reports/apidocs/
+
+  security-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+    
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    
+    - name: Run dependency check
+      run: mvn clean compile org.owasp:dependency-check-maven:check || true
+    
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-scan-results-${{ github.run_number }}
+        path: target/dependency-check-report.html 
