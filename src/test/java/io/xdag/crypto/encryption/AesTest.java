@@ -92,6 +92,50 @@ public class AesTest {
     }
 
     @Test
+    void shouldSupportLegacy16ByteNonce() throws CryptoException {
+        // Test for xdagj compatibility - 16 byte nonce (legacy)
+        Bytes plaintext = Bytes.wrap("Legacy nonce test".getBytes());
+        Bytes key = Bytes.wrap(CryptoProvider.getRandomBytes(24)); // AES-192
+        Bytes legacyNonce = Bytes.wrap(CryptoProvider.getRandomBytes(16)); // 16 bytes like xdagj uses
+
+        Bytes ciphertext = Aes.encrypt(plaintext, key, legacyNonce);
+        assertNotNull(ciphertext);
+        
+        Bytes decrypted = Aes.decrypt(ciphertext, key, legacyNonce);
+        assertEquals(plaintext, decrypted);
+    }
+
+    @Test
+    void shouldSupportXdagWalletCompatibility() throws CryptoException {
+        // Test exact xdagj Wallet scenario: 24-byte key + 16-byte IV
+        Bytes plaintext = Bytes.wrap("Private key data for wallet".getBytes());
+        Bytes key = Bytes.wrap(CryptoProvider.getRandomBytes(24)); // BCrypt key length
+        Bytes iv = Bytes.wrap(CryptoProvider.getRandomBytes(16)); // SecureRandomProvider IV
+
+        // This should work without throwing exceptions
+        Bytes ciphertext = Aes.encrypt(plaintext, key, iv);
+        assertNotNull(ciphertext);
+        assertTrue(ciphertext.size() > plaintext.size()); // Should include auth tag
+        
+        Bytes decrypted = Aes.decrypt(ciphertext, key, iv);
+        assertEquals(plaintext, decrypted);
+    }
+
+    @Test
+    void shouldPreferRecommendedNonceSize() throws CryptoException {
+        // Test that 12-byte nonce still works (recommended)
+        Bytes plaintext = Bytes.wrap("Recommended nonce test".getBytes());
+        Bytes key = Bytes.wrap(CryptoProvider.getRandomBytes(32)); // AES-256
+        Bytes recommendedNonce = Bytes.wrap(CryptoProvider.getRandomBytes(12)); // Recommended size
+
+        Bytes ciphertext = Aes.encrypt(plaintext, key, recommendedNonce);
+        assertNotNull(ciphertext);
+        
+        Bytes decrypted = Aes.decrypt(ciphertext, key, recommendedNonce);
+        assertEquals(plaintext, decrypted);
+    }
+
+    @Test
     void shouldEncryptAndDecryptEmptyData() throws CryptoException {
         Bytes plaintext = Bytes.EMPTY;
         Bytes32 key = Bytes32.random();
@@ -189,10 +233,11 @@ public class AesTest {
     void shouldThrowOnInvalidNonceSize() {
         Bytes plaintext = Bytes.wrap("test".getBytes());
         Bytes32 key = Bytes32.random();
-        Bytes wrongNonce = Bytes.wrap(new byte[16]); // Wrong size (16 bytes instead of 12)
+        Bytes wrongNonce = Bytes.wrap(new byte[8]); // Invalid size (8 bytes)
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.encrypt(plaintext, key, wrongNonce));
-        assertTrue(exception.getMessage().contains("Nonce must be 12 bytes"));
+        assertTrue(exception.getMessage().contains("Invalid nonce size: 8 bytes"));
+        assertTrue(exception.getMessage().contains("Valid sizes are: 12 bytes (recommended) or 16 bytes (legacy compatibility)"));
     }
 
     @Test
