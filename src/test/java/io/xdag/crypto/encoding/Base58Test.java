@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 public class Base58Test {
 
     @Test
-    void testEncodeDecode() {
+    void testEncodeDecode() throws AddressFormatException {
         byte[] testBytes = "Hello World".getBytes();
         String encoded = Base58.encode(testBytes);
         assertEquals("JxF12TrwUP45BMd", encoded);
@@ -45,7 +45,7 @@ public class Base58Test {
     }
 
     @Test
-    void testEncodeDecodeBytes() {
+    void testEncodeDecodeBytes() throws AddressFormatException {
         Bytes testBytes = Bytes.wrap("Hello World".getBytes());
         String encoded = Base58.encode(testBytes);
         assertEquals("JxF12TrwUP45BMd", encoded);
@@ -53,14 +53,14 @@ public class Base58Test {
     }
 
     @Test
-    void testEncodeDecodeCheck() {
+    void testEncodeDecodeCheck() throws AddressFormatException {
         byte[] testBytes = CryptoProvider.getRandomBytes(20); // Example payload
         String encoded = Base58.encodeCheck(testBytes);
         assertArrayEquals(testBytes, Base58.decodeCheckToArray(encoded));
     }
 
     @Test
-    void testEncodeDecodeCheckBytes() {
+    void testEncodeDecodeCheckBytes() throws AddressFormatException {
         Bytes testBytes = Bytes.wrap(CryptoProvider.getRandomBytes(20));
         String encoded = Base58.encodeCheck(testBytes);
         assertEquals(testBytes, Base58.decodeCheck(encoded));
@@ -68,13 +68,13 @@ public class Base58Test {
 
     @Test
     void testDecodeInvalidCharacter() {
-        assertThrows(AddressFormatException.InvalidCharacter.class, () -> Base58.decode("JxF12TrwUP45BMdO")); // Contains 'O'
+        assertThrows(AddressFormatException.class, () -> Base58.decode("JxF12TrwUP45BMdO")); // Contains 'O'
     }
 
     @Test
     void testDecodeCheckInvalidChecksum() {
         String validBase58 = "JxF12TrwUP45BMd"; // Valid base58, but not a valid check encoding
-        assertThrows(AddressFormatException.InvalidChecksum.class, () -> Base58.decodeCheck(validBase58));
+        assertThrows(AddressFormatException.class, () -> Base58.decodeCheck(validBase58));
     }
     
     @Test

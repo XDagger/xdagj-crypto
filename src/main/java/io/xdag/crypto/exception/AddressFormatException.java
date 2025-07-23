@@ -27,94 +27,91 @@ package io.xdag.crypto.exception;
  * Exception thrown when an address format is invalid.
  * 
  * <p>This exception indicates problems with address formatting, including:
- * - Invalid characters in the address string
- * - Incorrect address length
- * - Failed checksum validation
+ * <ul>
+ * <li>Invalid characters in the address string</li>
+ * <li>Incorrect address length</li>
+ * <li>Failed checksum validation</li>
+ * <li>Invalid Base58 encoding</li>
+ * </ul>
  * 
- * <p>Specialized subclasses provide more specific error information:
- * - {@link InvalidCharacter} - for invalid characters at specific positions
- * - {@link InvalidDataLength} - for addresses with wrong length
- * - {@link InvalidChecksum} - for checksum validation failures
+ * <p>This exception extends {@link CryptoException} to provide unified
+ * exception handling across the cryptographic library.
  */
-public class AddressFormatException extends IllegalArgumentException {
+public class AddressFormatException extends CryptoException {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Constructs a new address format exception with no detail message.
+     * Constructs a new address format exception with a default message.
      */
     public AddressFormatException() {
-        super();
+        super("Invalid address format");
     }
 
     /**
      * Constructs a new address format exception with the specified detail message.
-     * @param message the detail message.
+     * 
+     * @param message the detail message describing the specific format error
      */
     public AddressFormatException(String message) {
         super(message);
     }
 
     /**
-     * Exception thrown when an invalid character is found in an address
+     * Constructs a new address format exception with the specified detail message and cause.
+     * 
+     * @param message the detail message describing the specific format error
+     * @param cause the underlying cause of this exception
      */
-    public static class InvalidCharacter extends AddressFormatException {
-        private static final long serialVersionUID = 1L;
-        /** The invalid character found in the address string. */
-        public final char character;
-        /** The position (0-based) of the invalid character. */
-        public final int position;
-
-        /**
-         * Constructs an InvalidCharacter exception.
-         * @param character The invalid character.
-         * @param position The position of the character.
-         */
-        public InvalidCharacter(char character, int position) {
-            super("Invalid character '" + character + "' at position " + position);
-            this.character = character;
-            this.position = position;
-        }
+    public AddressFormatException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     /**
-     * Exception thrown when address data length is invalid
+     * Constructs a new address format exception with the specified cause.
+     * 
+     * @param cause the underlying cause of this exception
      */
-    public static class InvalidDataLength extends AddressFormatException {
-        private static final long serialVersionUID = 1L;
-        /**
-         * Constructs a new invalid data length exception with no detail message.
-         */
-        public InvalidDataLength() {
-            super();
-        }
-
-        /**
-         * Constructs a new invalid data length exception with the specified detail message.
-         * @param message the detail message.
-         */
-        public InvalidDataLength(String message) {
-            super(message);
-        }
+    public AddressFormatException(Throwable cause) {
+        super(cause);
     }
 
     /**
-     * Exception thrown when address checksum validation fails
+     * Creates an exception for invalid character errors.
+     * 
+     * @param character the invalid character found
+     * @param position the position of the invalid character
+     * @return a new AddressFormatException with appropriate message
      */
-    public static class InvalidChecksum extends AddressFormatException {
-        private static final long serialVersionUID = 1L;
-        /**
-         * Constructs a new invalid checksum exception with a default message.
-         */
-        public InvalidChecksum() {
-            super("Checksum does not validate");
-        }
+    public static AddressFormatException invalidCharacter(char character, int position) {
+        return new AddressFormatException("Invalid character '" + character + "' at position " + position);
+    }
 
-        /**
-         * Constructs a new invalid checksum exception with the specified detail message.
-         * @param message the detail message.
-         */
-        public InvalidChecksum(String message) {
-            super(message);
-        }
+    /**
+     * Creates an exception for invalid data length errors.
+     * 
+     * @param message the detail message about the length issue
+     * @return a new AddressFormatException with appropriate message
+     */
+    public static AddressFormatException invalidDataLength(String message) {
+        return new AddressFormatException("Invalid data length: " + message);
+    }
+
+    /**
+     * Creates an exception for checksum validation failures.
+     * 
+     * @return a new AddressFormatException for checksum errors
+     */
+    public static AddressFormatException invalidChecksum() {
+        return new AddressFormatException("Checksum validation failed");
+    }
+
+    /**
+     * Creates an exception for checksum validation failures with custom message.
+     * 
+     * @param message the detail message about the checksum issue
+     * @return a new AddressFormatException for checksum errors
+     */
+    public static AddressFormatException invalidChecksum(String message) {
+        return new AddressFormatException("Checksum validation failed: " + message);
     }
 }

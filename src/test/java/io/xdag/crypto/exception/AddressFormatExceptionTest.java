@@ -23,9 +23,7 @@
  */
 package io.xdag.crypto.exception;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,42 +31,86 @@ public class AddressFormatExceptionTest {
 
     @Test
     void testAddressFormatExceptionConstructors() {
+        // Test default constructor
         AddressFormatException e1 = new AddressFormatException();
-        assertNull(e1.getMessage());
+        assertEquals("Invalid address format", e1.getMessage());
+        assertNull(e1.getCause());
 
-        String msg = "Invalid address";
+        // Test message constructor
+        String msg = "Custom error message";
         AddressFormatException e2 = new AddressFormatException(msg);
         assertEquals(msg, e2.getMessage());
+        assertNull(e2.getCause());
+
+        // Test message and cause constructor
+        RuntimeException cause = new RuntimeException("root cause");
+        AddressFormatException e3 = new AddressFormatException(msg, cause);
+        assertEquals(msg, e3.getMessage());
+        assertEquals(cause, e3.getCause());
+
+        // Test cause constructor
+        AddressFormatException e4 = new AddressFormatException(cause);
+        assertEquals(cause, e4.getCause());
     }
 
     @Test
-    void testInvalidCharacter() {
-        char c = 'Z';
-        int pos = 10;
-        AddressFormatException.InvalidCharacter e = new AddressFormatException.InvalidCharacter(c, pos);
-        assertEquals(c, e.character);
-        assertEquals(pos, e.position);
-        assertTrue(e.getMessage().contains(String.valueOf(c)));
-        assertTrue(e.getMessage().contains(String.valueOf(pos)));
+    void testInvalidCharacterFactoryMethod() {
+        char c = 'O';
+        int pos = 5;
+        AddressFormatException e = AddressFormatException.invalidCharacter(c, pos);
+        
+        assertEquals("Invalid character 'O' at position 5", e.getMessage());
+        assertNull(e.getCause());
+        assertTrue(e instanceof AddressFormatException);
     }
 
     @Test
-    void testInvalidDataLength() {
-        AddressFormatException.InvalidDataLength e1 = new AddressFormatException.InvalidDataLength();
-        assertNull(e1.getMessage());
-
-        String msg = "Invalid data length";
-        AddressFormatException.InvalidDataLength e2 = new AddressFormatException.InvalidDataLength(msg);
-        assertEquals(msg, e2.getMessage());
+    void testInvalidDataLengthFactoryMethod() {
+        String message = "too short";
+        AddressFormatException e = AddressFormatException.invalidDataLength(message);
+        
+        assertEquals("Invalid data length: too short", e.getMessage());
+        assertNull(e.getCause());
+        assertTrue(e instanceof AddressFormatException);
     }
 
     @Test
-    void testInvalidChecksum() {
-        AddressFormatException.InvalidChecksum e1 = new AddressFormatException.InvalidChecksum();
-        assertEquals("Checksum does not validate", e1.getMessage());
+    void testInvalidChecksumFactoryMethods() {
+        // Test default checksum error
+        AddressFormatException e1 = AddressFormatException.invalidChecksum();
+        assertEquals("Checksum validation failed", e1.getMessage());
+        assertNull(e1.getCause());
 
-        String msg = "Custom checksum message";
-        AddressFormatException.InvalidChecksum e2 = new AddressFormatException.InvalidChecksum(msg);
-        assertEquals(msg, e2.getMessage());
+        // Test custom checksum error message
+        String message = "hash mismatch";
+        AddressFormatException e2 = AddressFormatException.invalidChecksum(message);
+        assertEquals("Checksum validation failed: hash mismatch", e2.getMessage());
+        assertNull(e2.getCause());
+    }
+
+    @Test
+    void testExceptionInheritance() {
+        AddressFormatException e = new AddressFormatException("test");
+        
+        // Should inherit from CryptoException
+        assertTrue(e instanceof CryptoException);
+        assertTrue(e instanceof Exception);
+        
+        // Verify it's a checked exception (not RuntimeException)
+        assertNotNull(e.getMessage());
+        assertTrue(CryptoException.class.isAssignableFrom(AddressFormatException.class));
+    }
+
+    @Test
+    void testFactoryMethodsReturnCorrectType() {
+        AddressFormatException e1 = AddressFormatException.invalidCharacter('X', 1);
+        AddressFormatException e2 = AddressFormatException.invalidDataLength("test");
+        AddressFormatException e3 = AddressFormatException.invalidChecksum();
+        AddressFormatException e4 = AddressFormatException.invalidChecksum("test");
+
+        assertSame(AddressFormatException.class, e1.getClass());
+        assertSame(AddressFormatException.class, e2.getClass());
+        assertSame(AddressFormatException.class, e3.getClass());
+        assertSame(AddressFormatException.class, e4.getClass());
     }
 } 

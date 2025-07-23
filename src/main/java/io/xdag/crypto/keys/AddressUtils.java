@@ -196,16 +196,14 @@ public final class AddressUtils {
         return Base58.encodeCheck(addressBytes);
     }
 
-
-
-    /**
-     * Convert a Base58Check encoded address back to its byte representation.
-     *
-     * @param base58Address The Base58Check encoded address.
-     * @return The 20-byte address as Bytes.
-     * @throws AddressFormatException if the address is invalid.
-     */
-    public static Bytes fromBase58Address(String base58Address) throws AddressFormatException {
+  /**
+   * Convert a Base58Check encoded address back to its byte representation.
+   *
+   * @param base58Address The Base58Check encoded address.
+   * @return The 20-byte address as Bytes.
+   * @throws AddressFormatException if the address is invalid.
+   */
+  public static Bytes fromBase58Address(String base58Address) throws AddressFormatException {
         Bytes decoded = Base58.decodeCheck(base58Address);
         if (decoded.size() != ADDRESS_LENGTH) {
             throw new AddressFormatException("Invalid address length");

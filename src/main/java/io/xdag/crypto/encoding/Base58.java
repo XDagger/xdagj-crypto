@@ -122,10 +122,10 @@ public final class Base58 {
     }
 
     /**
-     * Decode a Base58 string to a Bytes object.
+     * Decodes a Base58 string to bytes.
      * 
-     * @param input the Base58 string to decode
-     * @return the decoded Bytes object
+     * @param input Base58 encoded string
+     * @return decoded bytes
      * @throws AddressFormatException if the input contains invalid characters
      */
     public static Bytes decode(String input) throws AddressFormatException {
@@ -136,14 +136,14 @@ public final class Base58 {
         if (input.isEmpty()) {
             return Bytes.EMPTY;
         }
-        
+
         // Convert the string to byte array
         byte[] input58 = new byte[input.length()];
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
             int digit = c < 128 ? INDEXES[c] : -1;
             if (digit < 0) {
-                throw new AddressFormatException.InvalidCharacter(c, i);
+                throw AddressFormatException.invalidCharacter(c, i);
             }
             input58[i] = (byte) digit;
         }
@@ -224,7 +224,7 @@ public final class Base58 {
         Bytes decoded = decode(input);
         
         if (decoded.size() < 4) {
-            throw new AddressFormatException.InvalidDataLength("Base58Check data too short");
+            throw AddressFormatException.invalidDataLength("Base58Check data too short");
         }
         
         Bytes payload = decoded.slice(0, decoded.size() - 4);
@@ -232,7 +232,7 @@ public final class Base58 {
         Bytes expectedChecksum = computeChecksum(payload);
         
         if (!HashUtils.constantTimeEquals(checksum.toArrayUnsafe(), expectedChecksum.toArrayUnsafe())) {
-            throw new AddressFormatException.InvalidChecksum();
+            throw AddressFormatException.invalidChecksum();
         }
         
         return payload;
