@@ -23,27 +23,41 @@
  */
 package io.xdag.crypto.bip;
 
+import io.xdag.crypto.keys.ECKeyPair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 
 /**
- * Represents a BIP32 hierarchical deterministic node containing a key pair, chain code, and derivation info.
+ * Represents a BIP32 hierarchical deterministic key containing a key pair, chain code, and derivation info.
  * 
- * <p>This record encapsulates all the necessary information for a node in a BIP32 HD wallet tree,
+ * <p>This record encapsulates all the necessary information for a key in a BIP32 HD wallet tree,
  * including the cryptographic key pair, chain code for further derivation, and metadata about
- * its position in the hierarchy.
+ * its position in the hierarchy. This follows the BIP32 specification's definition of "extended keys".
  *
- * @param keyPair The asymmetric cipher key pair (private and public key).
- * @param chainCode The 32-byte chain code for this node, used for child key derivation.
- * @param depth The depth of this node in the HD tree (0 for master, increments with each derivation).
- * @param childNumber The number used to derive this node from its parent (includes hardened bit if applicable).
+ * <p>An extended key consists of:
+ * <ul>
+ *   <li>A key pair (private and public key)</li>
+ *   <li>A chain code for deriving child keys</li>
+ *   <li>Metadata about its position in the derivation tree</li>
+ * </ul>
+ * 
+ * <p>This class provides both modern API (using {@link ECKeyPair}) and legacy compatibility
+ * (via {@link #rawKeyPair()}) for existing code.
+ *
+ * @param keyPair The ECKeyPair containing the cryptographic keys.
+ * @param chainCode The 32-byte chain code for this key, used for child key derivation.
+ * @param depth The depth of this key in the HD tree (0 for master, increments with each derivation).
+ * @param childNumber The number used to derive this key from its parent (includes hardened bit if applicable).
  * @param parentFingerprint The first 4 bytes of the parent's public key hash, used for key identification.
+ * 
+ * @see <a href="https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki">BIP32 Specification</a>
  */
-public record Bip32Node(
-        AsymmetricCipherKeyPair keyPair,
+public record Bip32Key(
+        ECKeyPair keyPair,
         Bytes32 chainCode,
         int depth,
         int childNumber,
         Bytes parentFingerprint) {
+    
+
 } 

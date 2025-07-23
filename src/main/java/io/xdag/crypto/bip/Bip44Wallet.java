@@ -24,9 +24,11 @@
 package io.xdag.crypto.bip;
 
 import io.xdag.crypto.core.CryptoProvider;
+import io.xdag.crypto.core.KeyValidator;
 import io.xdag.crypto.exception.CryptoException;
 import io.xdag.crypto.hash.HashUtils;
-import io.xdag.crypto.keys.Keys;
+import io.xdag.crypto.keys.ECKeyPair;
+import io.xdag.crypto.keys.PrivateKey;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -47,124 +49,137 @@ import org.bouncycastle.crypto.params.KeyParameter;
  * methods for creating master keys from seeds and deriving child keys using the
  * standardized derivation path.
  * 
- * <p>The implementation follows the BIP44 derivation path:
+ * <p>The BIP44 standard defines a specific structure for HD wallets:
  * {@code m / purpose' / coin_type' / account' / change / address_index}
  * 
- * <p>For XDAG, the specific path is:
+ * <p>For XDAG, the derivation path is:
  * {@code m / 44' / 586' / account' / 0 / address_index}
+ * where 586 is XDAG's registered coin type.
  * 
- * <p>All methods in this class are static and thread-safe. The class cannot
- * be instantiated as it serves as a utility class. The private constructor
- * prevents instantiation and subclassing.
+ * <p><strong>Security Note:</strong> Seeds and private keys are handled securely with
+ * constant-time operations where possible to prevent timing attacks.
+ * 
+ * <p><strong>Thread Safety:</strong> This class is stateless and thread-safe.
  * 
  * @see <a href="https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki">BIP32</a>
  * @see <a href="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki">BIP44</a>
  */
 public final class Bip44Wallet {
 
-    /** 
-     * The hardened derivation bit used in BIP32 key derivation.
-     * When this bit is set, it indicates hardened derivation.
-     */
-    public static final int HARDENED_BIT = 0x80000000;
-    private static final Bytes BIP32_SEED_KEY = Bytes.wrap("Bitcoin seed".getBytes(StandardCharsets.UTF_8));
-    private static final int XDAG_BIP44_PATH = 44;
-    private static final int XDAG_COIN_TYPE = 586;
+    /** BIP44 purpose constant (44'). */
+    public static final int PURPOSE = 0x8000002C; // 44'
 
-    /**
-     * Private constructor to prevent instantiation.
-     * This class serves as a utility class with only static methods.
-     */
+    /** XDAG coin type constant (586'). */
+    public static final int XDAG_COIN_TYPE = 0x8000024A; // 586'
+
+    /** Hardened derivation bit. */
+    private static final int HARDENED_BIT = 0x80000000;
+
+    /** HMAC-SHA512 key for master key generation. */
+    private static final String BITCOIN_SEED = "Bitcoin seed";
+
     private Bip44Wallet() {
         // Utility class - prevent instantiation
     }
 
     /**
-     * Creates a master key pair from a seed according to BIP32 specification.
+     * Creates a master key from a seed according to BIP32 specification.
      * 
-     * <p>This method takes a cryptographic seed and generates the master
-     * private key and chain code using HMAC-SHA512 with the key "Bitcoin seed".
-     * The resulting master key pair can be used as the root for all further
-     * key derivations.
+     * <p>This method generates the root of the HD wallet hierarchy from which all
+     * other keys can be derived. The seed should be generated from a BIP39 mnemonic
+     * for standardized entropy and recovery.
      * 
-     * @param seed the cryptographic seed bytes (typically 64 bytes from BIP39)
-     * @return a new Bip32Node representing the master key pair
-     * @throws CryptoException if the generated private key is invalid or out of range
+     * <p>To extract just the cryptographic key pair from the result, use
+     * {@code createMasterKey(seed).keyPair()}.
+     * 
+     * @param seed the cryptographic seed (typically 64 bytes from BIP39)
+     * @return a new Bip32Key representing the master key
+     * @throws CryptoException if key generation fails
      */
-    public static Bip32Node createMasterKeyPair(byte[] seed) throws CryptoException {
-        // I = HMAC-SHA512(Key = "Bitcoin seed", Data = seed)
-        HMac hmac = new HMac(new SHA512Digest());
-        hmac.init(new KeyParameter(BIP32_SEED_KEY.toArrayUnsafe()));
-        hmac.update(seed, 0, seed.length);
-        byte[] i = new byte[hmac.getMacSize()];
-        hmac.doFinal(i, 0);
-
-        // Split I into two 32-byte sequences, IL and IR
-        BigInteger il = new BigInteger(1, Arrays.copyOfRange(i, 0, 32));
-        if (il.equals(BigInteger.ZERO) || il.compareTo(CryptoProvider.getCurve().getN()) >= 0) {
-            throw new CryptoException("Invalid master key generated from seed");
+    public static Bip32Key createMasterKey(byte[] seed) throws CryptoException {
+        if (seed == null || seed.length < 16) {
+            throw new CryptoException("Seed must be at least 16 bytes");
         }
 
-        AsymmetricCipherKeyPair masterKeyPair = Keys.fromPrivateKey(il);
-        Bytes32 chainCode = Bytes32.wrap(Arrays.copyOfRange(i, 32, 64));
+        try {
+            // Generate master key using HMAC-SHA512
+            HMac hmac = new HMac(new SHA512Digest());
+            hmac.init(new KeyParameter(BITCOIN_SEED.getBytes(StandardCharsets.UTF_8)));
+            hmac.update(seed, 0, seed.length);
 
-        return new Bip32Node(masterKeyPair, chainCode, 0, 0, Bytes.wrap(new byte[4]));
+            byte[] i = new byte[hmac.getMacSize()];
+            hmac.doFinal(i, 0);
+
+            // Split result: first 32 bytes = private key, last 32 bytes = chain code
+            BigInteger privateKey = new BigInteger(1, Arrays.copyOfRange(i, 0, 32));
+            if (!KeyValidator.isValidDerivedKeyRange(privateKey)) {
+                throw new CryptoException("Invalid master private key generated");
+            }
+
+            ECKeyPair masterKeyPair = ECKeyPair.fromPrivateKey(PrivateKey.fromBigInteger(privateKey));
+            Bytes32 chainCode = Bytes32.wrap(Arrays.copyOfRange(i, 32, 64));
+
+            return new Bip32Key(masterKeyPair, chainCode, 0, 0, Bytes.EMPTY);
+
+        } catch (Exception e) {
+            throw new CryptoException("Failed to create master key", e);
+        }
     }
 
     /**
-     * Derives an XDAG key pair using BIP44 standard derivation path.
+     * Derives an XDAG key using BIP44 standard derivation path.
      * 
-     * <p>This method implements the XDAG-specific BIP44 derivation path:
-     * {@code m / 44' / 586' / account' / 0 / address_index}
+     * <p>This method derives a key at the path {@code m/44'/586'/account'/0/addressIndex}
+     * which is the standard path for XDAG addresses according to BIP44.
      * 
-     * @param master the master Bip32Node (created from seed)
-     * @param account the account index for derivation
-     * @param addressIndex the address index for derivation
-     * @return the derived Bip32Node for the specified account and address index
-     * @throws CryptoException if key derivation fails at any step
+     * <p>Both account and addressIndex should be non-negative integers.
+     * The method handles the hardened derivation internally.
+     * 
+     * @param master the master key from which to derive
+     * @param account the account index (will be hardened automatically)
+     * @param addressIndex the address index within the account
+     * @return the derived Bip32Key for the specified path
+     * @throws CryptoException if derivation fails
      */
-    public static Bip32Node deriveXdagKeyPair(Bip32Node master, int account, int addressIndex) throws CryptoException {
-        // BIP44 path: m / 44' / 586' / account' / 0 / address_index
-        int[] path = {
-            XDAG_BIP44_PATH | HARDENED_BIT,      // 44'
-            XDAG_COIN_TYPE | HARDENED_BIT,       // 586' 
-            account | HARDENED_BIT,              // account'
-            0,                                   // change (external)
-            addressIndex                         // address_index
-        };
+    public static Bip32Key deriveXdagKey(Bip32Key master, int account, int addressIndex) throws CryptoException {
+        if (account < 0 || addressIndex < 0) {
+            throw new CryptoException("Account and address index must be non-negative");
+        }
+
+        // Build BIP44 path: m/44'/586'/account'/0/addressIndex
+        int[] path = {PURPOSE, XDAG_COIN_TYPE, HARDENED_BIT | account, 0, addressIndex};
         return derivePath(master, path);
     }
 
     /**
-     * Derives a key pair following the specified derivation path.
+     * Derives a key following the specified derivation path.
      * 
-     * <p>This method sequentially derives child keys according to the provided path.
-     * Each element in the path represents a child index, with hardened derivation
-     * indicated by the {@link #HARDENED_BIT}.
+     * <p>The path is an array of integers where hardened derivation is indicated
+     * by setting the most significant bit (>= 0x80000000).
      * 
-     * @param parent the parent Bip32Node to start derivation from
-     * @param path an array of child indices defining the derivation path
-     * @return the final derived Bip32Node
-     * @throws CryptoException if any step in the derivation fails
+     * @param parent the parent key from which to derive
+     * @param path the derivation path as an array of child numbers
+     * @return the derived Bip32Key
+     * @throws CryptoException if any step of the derivation fails
      */
-    public static Bip32Node derivePath(Bip32Node parent, int[] path) throws CryptoException {
-        Bip32Node current = parent;
+    public static Bip32Key derivePath(Bip32Key parent, int[] path) throws CryptoException {
+        Bip32Key current = parent;
         for (int childNumber : path) {
             boolean isHardened = (childNumber & HARDENED_BIT) != 0;
-            current = deriveChildKeyPair(current, childNumber, isHardened);
+            current = deriveChildKey(current, childNumber, isHardened);
         }
         return current;
     }
 
-    private static Bip32Node deriveChildKeyPair(Bip32Node parent, int childNumber, boolean isHardened) throws CryptoException {
+    private static Bip32Key deriveChildKey(Bip32Key parent, int childNumber, boolean isHardened) throws CryptoException {
         Bytes data;
         if (isHardened) {
-            BigInteger privateKey = ((ECPrivateKeyParameters) parent.keyPair().getPrivate()).getD();
-            // 使用33字节格式（0x00前缀），这与原始xdagj的BIP44实现一致
+            BigInteger privateKey = parent.keyPair().getPrivateKey().toBigInteger();
+            // Use 33-byte format (0x00 prefix), consistent with original xdagj BIP44 implementation
             byte[] privateKeyBytes = bigIntegerToBytes33WithPrefix(privateKey);
             data = Bytes.concatenate(Bytes.wrap(privateKeyBytes), intToBytes(childNumber));
         } else {
-            byte[] publicKey = ((ECPublicKeyParameters) parent.keyPair().getPublic()).getQ().getEncoded(true);
+            byte[] publicKey = parent.keyPair().getPublicKey().toCompressedBytes().toArrayUnsafe();
             data = Bytes.concatenate(Bytes.wrap(publicKey), intToBytes(childNumber));
         }
 
@@ -175,24 +190,23 @@ public final class Bip44Wallet {
         hmac.doFinal(i, 0);
 
         BigInteger il = new BigInteger(1, Arrays.copyOfRange(i, 0, 32));
-        if (il.compareTo(CryptoProvider.getCurve().getN()) >= 0) {
+        if (!KeyValidator.isValidDerivedKeyRange(il)) {
             throw new CryptoException("Derived private key is not in the valid range.");
         }
 
-        BigInteger parentPrivateKey = ((ECPrivateKeyParameters) parent.keyPair().getPrivate()).getD();
+        BigInteger parentPrivateKey = parent.keyPair().getPrivateKey().toBigInteger();
         BigInteger derivedPrivateKey = parentPrivateKey.add(il).mod(CryptoProvider.getCurve().getN());
-        if (derivedPrivateKey.equals(BigInteger.ZERO)) {
+        if (!KeyValidator.isValidDerivedKeyRange(derivedPrivateKey)) {
             throw new CryptoException("Derived private key is zero.");
         }
 
-        AsymmetricCipherKeyPair derivedKeyPair = Keys.fromPrivateKey(derivedPrivateKey);
+        ECKeyPair derivedKeyPair = ECKeyPair.fromPrivateKey(PrivateKey.fromBigInteger(derivedPrivateKey));
         Bytes32 derivedChainCode = Bytes32.wrap(Arrays.copyOfRange(i, 32, 64));
 
-        ECPublicKeyParameters pub = (ECPublicKeyParameters) parent.keyPair().getPublic();
-        byte[] parentPublicKey = pub.getQ().getEncoded(true);
+        byte[] parentPublicKey = parent.keyPair().getPublicKey().toCompressedBytes().toArrayUnsafe();
         Bytes parentFingerprint = HashUtils.sha256hash160(Bytes.wrap(parentPublicKey)).slice(0, 4);
         
-        return new Bip32Node(derivedKeyPair, derivedChainCode, parent.depth() + 1, childNumber, parentFingerprint);
+        return new Bip32Key(derivedKeyPair, derivedChainCode, parent.depth() + 1, childNumber, parentFingerprint);
     }
 
     /**

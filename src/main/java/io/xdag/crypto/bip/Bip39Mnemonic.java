@@ -23,7 +23,7 @@
  */
 package io.xdag.crypto.bip;
 
-import io.xdag.crypto.core.SecureRandomProvider;
+import io.xdag.crypto.core.CryptoProvider;
 import io.xdag.crypto.exception.CryptoException;
 import io.xdag.crypto.hash.HashUtils;
 import java.io.BufferedReader;
@@ -44,19 +44,31 @@ import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
- * BIP39 mnemonic code generator and seed derivation with Tuweni Bytes optimization.
+ * BIP39 mnemonic code generator and seed derivation with simplified, developer-friendly API.
  * 
- * <p>This class implements the BIP39 specification for mnemonic code generation and seed derivation.
- * It provides secure methods for generating mnemonics from entropy, validating mnemonics,
- * and deriving deterministic seeds from mnemonics and passphrases.
+ * <p>This class implements the BIP39 specification focused on the most common use case:
+ * 12-word mnemonics (128 bits of entropy). It provides a clean, string-based API for
+ * generating, validating, and converting mnemonics to seeds.
  * 
  * <p>Key features:
- * - Generate mnemonics from entropy (128-256 bits)
+ * - Generate 12-word mnemonics (128-bit entropy)
+ * - Simple string-based API (no List&lt;String&gt; handling required)
  * - Validate mnemonic checksums
  * - Convert mnemonics to seeds using PBKDF2
- * - Support for multiple languages (currently English)
+ * - Support for passphrases
  * - Zero-copy operations using Tuweni Bytes
- * - Constant-time validation where possible
+ * 
+ * <p>Example usage:
+ * <pre>{@code
+ * // Generate new mnemonic
+ * String mnemonic = Bip39Mnemonic.generateString();
+ * 
+ * // Validate existing mnemonic
+ * boolean valid = Bip39Mnemonic.isValid(mnemonic);
+ * 
+ * // Convert to seed
+ * Bytes seed = Bip39Mnemonic.toSeed(mnemonic);
+ * }</pre>
  * 
  * @see <a href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki">BIP39 Specification</a>
  */
@@ -86,110 +98,108 @@ public final class Bip39Mnemonic {
         // Utility class - prevent instantiation
     }
 
+    // ============================= Simple String API =============================
+    
     /**
-     * Generate a random mnemonic with the specified entropy length.
-     *
-     * @param entropyBits the entropy length in bits (128, 160, 192, 224, or 256)
-     * @return the generated mnemonic as a list of words
-     * @throws CryptoException if entropy length is invalid or generation fails
+     * Generate a random 12-word mnemonic as a space-separated string.
+     * 
+     * @return 12-word mnemonic as "word1 word2 word3..."
+     * @throws CryptoException if generation fails
      */
-    public static List<String> generateMnemonic(int entropyBits) throws CryptoException {
-        if (entropyBits % 32 != 0 || entropyBits < 128 || entropyBits > 256) {
-            throw new CryptoException("Entropy bits must be 128, 160, 192, 224, or 256");
-        }
-
-        int entropyBytes = entropyBits / 8;
-        byte[] entropy = SecureRandomProvider.getRandomBytes(entropyBytes);
-        
-        return generateMnemonic(Bytes.wrap(entropy));
+    public static String generateString() throws CryptoException {
+        return String.join(" ", generateMnemonic());
     }
-
+    
     /**
-     * Generate a mnemonic from the given entropy.
-     *
-     * @param entropy the entropy bytes
-     * @return the generated mnemonic as a list of words
-     * @throws CryptoException if entropy is invalid
+     * Validate mnemonic checksum.
+     * 
+     * @param mnemonic space-separated mnemonic string
+     * @return true if valid
      */
-    public static List<String> generateMnemonic(Bytes entropy) throws CryptoException {
-        if (entropy == null || entropy.size() < 16 || entropy.size() > 32 || entropy.size() % 4 != 0) {
-            throw new CryptoException("Entropy must be 16-32 bytes and divisible by 4");
-        }
-
+    public static boolean isValid(String mnemonic) {
         try {
-            // Calculate checksum with mask
-            int entropySize = entropy.size();
-            Bytes32 hash = HashUtils.sha256(entropy);
-            byte checksumMask = (byte) (0xff << (8 - entropySize / 4));
-            byte checksumByte = (byte) (hash.get(0) & checksumMask);
-
-            // Convert to bit array
-            BitSet entropyBits = bytesToBits(entropy.toArrayUnsafe());
-            BitSet checksumBits = new BitSet();
-            
-            int checksumLength = entropy.size() / 4;
-            for (int i = 0; i < checksumLength; i++) {
-                if ((checksumByte & (1 << (7 - i))) != 0) {
-                    checksumBits.set(i);
-                }
-            }
-
-            // Combine entropy and checksum
-            BitSet combined = new BitSet();
-            for (int i = 0; i < entropyBits.length(); i++) {
-                if (entropyBits.get(i)) {
-                    combined.set(i);
-                }
-            }
-            
-            int entropyBitLength = entropy.size() * 8;
-            for (int i = 0; i < checksumLength; i++) {
-                if (checksumBits.get(i)) {
-                    combined.set(entropyBitLength + i);
-                }
-            }
-
-            // Convert to word indices
-            int totalBits = entropyBitLength + checksumLength;
-            int wordCount = totalBits / 11;
-            List<String> mnemonic = new ArrayList<>(wordCount);
-
-            for (int i = 0; i < wordCount; i++) {
-                int wordIndex = 0;
-                for (int j = 0; j < 11; j++) {
-                    if (combined.get(i * 11 + j)) {
-                        wordIndex |= (1 << (10 - j));
-                    }
-                }
-                mnemonic.add(WORD_LIST.get(wordIndex));
-            }
-
-            return mnemonic;
-
+            List<String> words = parseMnemonic(mnemonic);
+            return validateMnemonic(words);
         } catch (Exception e) {
-            throw new CryptoException("Failed to generate mnemonic", e);
+            return false;
         }
     }
-
+    
     /**
-     * Legacy method: Generate mnemonic from byte array entropy.
-     * Prefer the Bytes version for better performance.
-     *
-     * @param entropy the entropy bytes
-     * @return the generated mnemonic as a list of words
-     * @throws CryptoException if entropy is invalid
+     * Convert mnemonic to seed.
+     * 
+     * @param mnemonic space-separated mnemonic string
+     * @return 64-byte seed
+     * @throws CryptoException if invalid mnemonic
      */
-    public static List<String> generateMnemonic(byte[] entropy) throws CryptoException {
-        return generateMnemonic(Bytes.wrap(entropy));
+    public static Bytes toSeed(String mnemonic) throws CryptoException {
+        return toSeed(mnemonic, null);
+    }
+    
+    /**
+     * Convert mnemonic to seed with passphrase.
+     * 
+     * @param mnemonic space-separated mnemonic string
+     * @param passphrase optional passphrase (can be null)
+     * @return 64-byte seed
+     * @throws CryptoException if invalid mnemonic
+     */
+    public static Bytes toSeed(String mnemonic, String passphrase) throws CryptoException {
+        List<String> words = parseMnemonic(mnemonic);
+        return mnemonicToSeed(words, passphrase);
     }
 
+    // ============================= Internal Methods =============================
+    
+    /**
+     * Generate a random 12-word mnemonic.
+     * Internal method for generating mnemonics.
+     * 
+     * @return 12-word mnemonic as a list
+     * @throws CryptoException if generation fails
+     */
+    private static List<String> generateMnemonic() throws CryptoException {
+        byte[] entropy = CryptoProvider.getRandomBytes(16); // 128 bits = 16 bytes
+        return generateMnemonic(Bytes.wrap(entropy));
+    }
+    
+    /**
+     * Parse mnemonic string into word list.
+     * Internal method for parsing mnemonic strings.
+     * 
+     * @param mnemonic space-separated mnemonic string
+     * @return list of words
+     * @throws CryptoException if invalid format
+     */
+    private static List<String> parseMnemonic(String mnemonic) throws CryptoException {
+        if (mnemonic == null || mnemonic.trim().isEmpty()) {
+            throw new CryptoException("Mnemonic cannot be null or empty");
+        }
+        
+        String[] words = mnemonic.trim().toLowerCase().split("\\s+");
+        if (words.length != 12) {
+            throw new CryptoException("Mnemonic must have exactly 12 words, got: " + words.length);
+        }
+        
+        List<String> result = new ArrayList<>();
+        for (String word : words) {
+            if (!isValidWord(word)) {
+                throw new CryptoException("Invalid word: " + word);
+            }
+            result.add(word);
+        }
+        
+        return result;
+    }
+    
     /**
      * Validate a mnemonic by checking its checksum.
+     * Internal method for validating mnemonic word lists.
      *
      * @param mnemonic the mnemonic words
      * @return true if the mnemonic is valid, false otherwise
      */
-    public static boolean validateMnemonic(List<String> mnemonic) {
+    private static boolean validateMnemonic(List<String> mnemonic) {
         if (mnemonic == null || mnemonic.isEmpty()) {
             return false;
         }
@@ -415,5 +425,73 @@ public final class Bip39Mnemonic {
         }
         
         return bytes;
+    }
+
+    /**
+     * Generate a mnemonic from the given entropy.
+     * Internal method for generating mnemonics from entropy bytes.
+     *
+     * @param entropy the entropy bytes
+     * @return the generated mnemonic as a list of words
+     * @throws CryptoException if entropy is invalid
+     */
+    private static List<String> generateMnemonic(Bytes entropy) throws CryptoException {
+        if (entropy == null || entropy.size() < 16 || entropy.size() > 32 || entropy.size() % 4 != 0) {
+            throw new CryptoException("Entropy must be 16-32 bytes and divisible by 4");
+        }
+
+        try {
+            // Calculate checksum with mask
+            int entropySize = entropy.size();
+            Bytes32 hash = HashUtils.sha256(entropy);
+            byte checksumMask = (byte) (0xff << (8 - entropySize / 4));
+            byte checksumByte = (byte) (hash.get(0) & checksumMask);
+
+            // Convert to bit array
+            BitSet entropyBits = bytesToBits(entropy.toArrayUnsafe());
+            BitSet checksumBits = new BitSet();
+            
+            int checksumLength = entropy.size() / 4;
+            for (int i = 0; i < checksumLength; i++) {
+                if ((checksumByte & (1 << (7 - i))) != 0) {
+                    checksumBits.set(i);
+                }
+            }
+
+            // Combine entropy and checksum
+            BitSet combined = new BitSet();
+            for (int i = 0; i < entropyBits.length(); i++) {
+                if (entropyBits.get(i)) {
+                    combined.set(i);
+                }
+            }
+            
+            int entropyBitLength = entropy.size() * 8;
+            for (int i = 0; i < checksumLength; i++) {
+                if (checksumBits.get(i)) {
+                    combined.set(entropyBitLength + i);
+                }
+            }
+
+            // Convert to word indices
+            int totalBits = entropyBitLength + checksumLength;
+            int wordCount = totalBits / 11;
+            List<String> mnemonic = new ArrayList<>(wordCount);
+
+            for (int i = 0; i < wordCount; i++) {
+                int wordIndex = 0;
+                for (int j = 0; j < 11; j++) {
+                    if (combined.get(i * 11 + j)) {
+                        wordIndex |= (1 << (10 - j));
+                    }
+                }
+                mnemonic.add(WORD_LIST.get(wordIndex));
+            }
+
+            return mnemonic;
+
+        } catch (Exception e) {
+            throw new CryptoException("Failed to generate mnemonic", e);
+        }
     }
 } 
