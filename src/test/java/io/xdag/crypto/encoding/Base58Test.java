@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.xdag.crypto.core.SecureRandomProvider;
+import io.xdag.crypto.core.CryptoProvider;
 import io.xdag.crypto.exception.AddressFormatException;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -53,14 +53,14 @@ public class Base58Test {
 
     @Test
     void testEncodeDecodeCheck() {
-        byte[] testBytes = SecureRandomProvider.getRandomBytes(20); // Example payload
+        byte[] testBytes = CryptoProvider.getRandomBytes(20); // Example payload
         String encoded = Base58.encodeCheck(testBytes);
         assertArrayEquals(testBytes, Base58.decodeCheckToArray(encoded));
     }
 
     @Test
     void testEncodeDecodeCheckBytes() {
-        Bytes testBytes = Bytes.wrap(SecureRandomProvider.getRandomBytes(20));
+        Bytes testBytes = Bytes.wrap(CryptoProvider.getRandomBytes(20));
         String encoded = Base58.encodeCheck(testBytes);
         assertEquals(testBytes, Base58.decodeCheck(encoded));
     }

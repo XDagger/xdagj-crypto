@@ -29,16 +29,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigInteger;
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class CryptoProviderTest {
 
-    @BeforeEach
-    void setUp() {
-        // Ensure the provider is initialized before each test
-        CryptoProvider.install();
-    }
+    // CryptoProvider is automatically initialized via static block
 
     @Test
     void testIsInitialized() {
@@ -63,4 +58,13 @@ public class CryptoProviderTest {
         assertEquals("BC", CryptoProvider.BOUNCY_CASTLE_PROVIDER);
         assertEquals("secp256k1", CryptoProvider.CURVE_NAME);
     }
+
+    @Test
+    void shouldInitializeCryptoProvider() {
+        CryptoProvider.initialize();
+        
+        assertTrue(CryptoProvider.isInstalled(), "CryptoProvider should be initialized");
+    }
+
+
 } 

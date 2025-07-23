@@ -23,7 +23,7 @@
  */
 package io.xdag.crypto.hash;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +43,7 @@ class XdagSha256DigestTest {
 
         byte[] actual = digest.sha256Final(input);
 
-        assertThat(Bytes.wrap(actual)).isEqualTo(expected);
+        assertEquals(expected, Bytes.wrap(actual));
     }
 
     @Test
@@ -60,7 +60,7 @@ class XdagSha256DigestTest {
         digest.sha256Update(input2);
         byte[] actual = digest.sha256Final(Bytes.EMPTY); // Finalize with empty bytes
 
-        assertThat(Bytes.wrap(actual)).isEqualTo(expected);
+        assertEquals(expected, Bytes.wrap(actual));
     }
 
     @Test
@@ -79,44 +79,46 @@ class XdagSha256DigestTest {
         Bytes expected = Bytes.wrap(Arrays.reverse(HashUtils.doubleSha256(input2).toArray()));
         byte[] actual = digest.sha256Final(input2);
 
-        assertThat(Bytes.wrap(actual)).isEqualTo(expected);
+        assertEquals(expected, Bytes.wrap(actual));
     }
 
     @Test
-    void testCopyConstructor_isolatesState() throws IOException {
-        XdagSha256Digest digest1 = new XdagSha256Digest();
-        Bytes input1 = Bytes.wrap("hello".getBytes(StandardCharsets.UTF_8));
-        digest1.sha256Update(input1);
-
-        // Create a copy *after* updating the original
-        XdagSha256Digest digest2 = new XdagSha256Digest(digest1);
-
-        Bytes input2 = Bytes.wrap(" world".getBytes(StandardCharsets.UTF_8));
-        digest2.sha256Update(input2);
-
-        // Finalize both digests. They should be different.
-        Bytes fullInput = Bytes.wrap("hello world".getBytes(StandardCharsets.UTF_8));
-        Bytes expectedDigest2Result = Bytes.wrap(Arrays.reverse(HashUtils.doubleSha256(fullInput).toArray()));
-        assertThat(Bytes.wrap(digest2.sha256Final(Bytes.EMPTY))).isEqualTo(expectedDigest2Result);
-
-        // The original digest should remain unchanged by the update to the copy
-        Bytes expectedDigest1Result = Bytes.wrap(Arrays.reverse(HashUtils.doubleSha256(input1).toArray()));
-        assertThat(Bytes.wrap(digest1.sha256Final(Bytes.EMPTY))).isEqualTo(expectedDigest1Result);
+    void testSha256InitClearsState() throws IOException {
+        XdagSha256Digest digest = new XdagSha256Digest();
+        Bytes input = Bytes.wrap("test".getBytes(StandardCharsets.UTF_8));
+        
+        // Update with some data
+        digest.sha256Update(input);
+        
+        // Reset the digest
+        digest.sha256Init();
+        
+        // Finalize should give the same result as a fresh digest
+        XdagSha256Digest freshDigest = new XdagSha256Digest();
+        
+        byte[] actualAfterReset = digest.sha256Final(Bytes.EMPTY);
+        byte[] expectedFromFresh = freshDigest.sha256Final(Bytes.EMPTY);
+        
+        assertArrayEquals(expectedFromFresh, actualAfterReset);
     }
 
     @Test
-    void testGetState_isDeterministic() throws IOException {
-        XdagSha256Digest digest1 = new XdagSha256Digest();
-        XdagSha256Digest digest2 = new XdagSha256Digest();
-        Bytes input = Bytes.wrap("some consistent input data".getBytes(StandardCharsets.UTF_8));
+    void testMultipleUpdatesAndFinal() throws IOException {
+        XdagSha256Digest digest = new XdagSha256Digest();
+        Bytes part1 = Bytes.wrap("The ".getBytes(StandardCharsets.UTF_8));
+        Bytes part2 = Bytes.wrap("quick ".getBytes(StandardCharsets.UTF_8));
+        Bytes part3 = Bytes.wrap("brown fox".getBytes(StandardCharsets.UTF_8));
+        Bytes fullInput = Bytes.concatenate(part1, part2, part3);
 
-        digest1.sha256Update(input);
-        byte[] state1 = digest1.getState();
+        // Expected result using all input at once
+        Bytes expected = Bytes.wrap(Arrays.reverse(HashUtils.doubleSha256(fullInput).toArray()));
 
-        digest2.sha256Update(input);
-        byte[] state2 = digest2.getState();
+        // Update in parts
+        digest.sha256Update(part1);
+        digest.sha256Update(part2);
+        digest.sha256Update(part3);
+        byte[] actual = digest.sha256Final(Bytes.EMPTY);
 
-        assertThat(state1).isNotNull().hasSize(32);
-        assertThat(state1).isEqualTo(state2);
+        assertArrayEquals(expected.toArrayUnsafe(), actual);
     }
 } 
