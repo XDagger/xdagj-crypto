@@ -34,18 +34,24 @@ import org.bouncycastle.crypto.params.KeyParameter;
 
 
 /**
- * Provides AES-256-GCM authenticated encryption and decryption.
+ * Provides AES-GCM authenticated encryption and decryption with support for all standard key sizes.
  *
  * <p>This utility class implements AES with Galois/Counter Mode (GCM), which is an authenticated
  * encryption mode. It not only ensures confidentiality but also provides strong integrity and
  * authenticity protection, safeguarding against tampering.
  *
- * <p>Key properties:
+ * <p>Supported configurations:
  * <ul>
- *   <li><b>Algorithm:</b> AES-256-GCM (AES/GCM/NoPadding)
- *   <li><b>Key Size:</b> 256 bits (32 bytes)
- *   <li><b>Nonce (IV) Size:</b> 96 bits (12 bytes) is recommended for GCM.
- *   <li><b>Authentication Tag Size:</b> 128 bits (16 bytes) for strong security.
+ *   <li><b>AES-128-GCM:</b> 128-bit key (16 bytes)</li>
+ *   <li><b>AES-192-GCM:</b> 192-bit key (24 bytes)</li>
+ *   <li><b>AES-256-GCM:</b> 256-bit key (32 bytes)</li>
+ * </ul>
+ *
+ * <p>Common properties:
+ * <ul>
+ *   <li><b>Mode:</b> GCM (Galois/Counter Mode)</li>
+ *   <li><b>Nonce (IV) Size:</b> 96 bits (12 bytes) - recommended for GCM</li>
+ *   <li><b>Authentication Tag Size:</b> 128 bits (16 bytes) for strong security</li>
  * </ul>
  *
  * This class is thread-safe and uses {@link org.apache.tuweni.bytes.Bytes} for high-performance,
@@ -53,8 +59,16 @@ import org.bouncycastle.crypto.params.KeyParameter;
  */
 public final class Aes {
 
+    /** Recommended nonce size for GCM mode (96 bits / 12 bytes) */
     private static final int NONCE_SIZE_BYTES = 12;
+    
+    /** Authentication tag size in bits (128 bits for strong security) */
     private static final int TAG_SIZE_BITS = 128;
+    
+    /** Valid AES key sizes in bytes */
+    private static final int AES_128_KEY_SIZE = 16; // 128 bits
+    private static final int AES_192_KEY_SIZE = 24; // 192 bits  
+    private static final int AES_256_KEY_SIZE = 32; // 256 bits
 
     /**
      * Private constructor to prevent instantiation of this utility class.
@@ -62,12 +76,39 @@ public final class Aes {
     private Aes() {
     }
 
+    /**
+     * Validates that the provided key size is a valid AES key length.
+     * 
+     * @param keySize the key size in bytes
+     * @throws CryptoException if the key size is invalid
+     */
+    private static void validateKeySize(int keySize) throws CryptoException {
+        if (keySize != AES_128_KEY_SIZE && keySize != AES_192_KEY_SIZE && keySize != AES_256_KEY_SIZE) {
+            throw new CryptoException("Invalid AES key size: " + keySize + " bytes. " +
+                "Valid sizes are: 16 (AES-128), 24 (AES-192), or 32 (AES-256) bytes.");
+        }
+    }
 
     /**
-     * Encrypts data using AES-256-GCM.
+     * Gets the AES variant name based on key size.
+     * 
+     * @param keySize the key size in bytes
+     * @return the AES variant name (e.g., "AES-256")
+     */
+    private static String getAesVariant(int keySize) {
+        return switch (keySize) {
+            case AES_128_KEY_SIZE -> "AES-128";
+            case AES_192_KEY_SIZE -> "AES-192";
+            case AES_256_KEY_SIZE -> "AES-256";
+            default -> "AES-Unknown";
+        };
+    }
+
+    /**
+     * Encrypts data using AES-GCM with the specified key size.
      *
      * @param plainText The plaintext data to encrypt.
-     * @param key The 32-byte encryption key.
+     * @param key The encryption key (16, 24, or 32 bytes for AES-128/192/256).
      * @param nonce The 12-byte nonce (IV). It must be unique for each encryption with the same key.
      * @return The encrypted data, consisting of the ciphertext concatenated with the 16-byte
      *     authentication tag.
@@ -86,9 +127,7 @@ public final class Aes {
         }
         
         // Validate sizes
-        if (key.size() != 32) {
-            throw new CryptoException("Key must be 32 bytes for AES-256, got: " + key.size());
-        }
+        validateKeySize(key.size());
         if (nonce.size() != NONCE_SIZE_BYTES) {
             throw new CryptoException("Nonce must be " + NONCE_SIZE_BYTES + " bytes for GCM, got: " + nonce.size());
         }
@@ -103,18 +142,18 @@ public final class Aes {
         try {
             length += cipher.doFinal(output, length);
         } catch (InvalidCipherTextException e) {
-            throw new CryptoException("AES-GCM encryption failed during finalization.", e);
+            throw new CryptoException(getAesVariant(key.size()) + "-GCM encryption failed during finalization.", e);
         }
 
         return Bytes.wrap(output, 0, length);
     }
 
     /**
-     * Decrypts data using AES-256-GCM.
+     * Decrypts data using AES-GCM with the specified key size.
      *
      * @param cipherText The encrypted data, which includes the ciphertext followed by the
      *     16-byte authentication tag.
-     * @param key The 32-byte decryption key.
+     * @param key The decryption key (16, 24, or 32 bytes for AES-128/192/256).
      * @param nonce The 12-byte nonce (IV) that was used for encryption.
      * @return The decrypted plaintext data.
      * @throws CryptoException if decryption fails, typically due to an invalid tag (tampering) or
@@ -133,9 +172,7 @@ public final class Aes {
         }
         
         // Validate sizes
-        if (key.size() != 32) {
-            throw new CryptoException("Key must be 32 bytes for AES-256, got: " + key.size());
-        }
+        validateKeySize(key.size());
         if (nonce.size() != NONCE_SIZE_BYTES) {
             throw new CryptoException("Nonce must be " + NONCE_SIZE_BYTES + " bytes for GCM, got: " + nonce.size());
         }
@@ -155,7 +192,8 @@ public final class Aes {
 
             return Bytes.wrap(output, 0, length);
         } catch (InvalidCipherTextException e) {
-            throw new CryptoException("AES-GCM decryption failed. The data may be tampered or the key/nonce is incorrect.", e);
+            throw new CryptoException(getAesVariant(key.size()) + "-GCM decryption failed. " +
+                "The data may be tampered or the key/nonce is incorrect.", e);
         }
     }
 }
