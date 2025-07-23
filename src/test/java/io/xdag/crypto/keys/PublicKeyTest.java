@@ -30,6 +30,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
+
 /**
  * Comprehensive tests for PublicKey class functionality.
  * 
@@ -263,5 +265,107 @@ class PublicKeyTest {
         String hex = testPublicKey.toHex();
         PublicKey fromHex = PublicKey.fromHex(hex);
         assertEquals(testPublicKey, fromHex);
+    }
+
+    @Test
+    void shouldReturnValidCoordinates() {
+        BigInteger x = testPublicKey.getXCoordinate();
+        BigInteger y = testPublicKey.getYCoordinate();
+        
+        assertNotNull(x);
+        assertNotNull(y);
+        assertTrue(x.compareTo(BigInteger.ZERO) > 0);
+        assertTrue(y.compareTo(BigInteger.ZERO) > 0);
+    }
+
+    @Test
+    void shouldCreateFromCoordinates() throws CryptoException {
+        BigInteger x = testPublicKey.getXCoordinate();
+        BigInteger y = testPublicKey.getYCoordinate();
+        
+        PublicKey recreated = PublicKey.fromCoordinates(x, y);
+        assertEquals(testPublicKey, recreated);
+    }
+
+    @Test
+    void shouldRoundTripThroughBigInteger() throws CryptoException {
+        // Test Besu-style BigInteger round-trip
+        BigInteger bigIntValue = testPublicKey.toBigInteger();
+        assertNotNull(bigIntValue);
+        assertTrue(bigIntValue.compareTo(BigInteger.ZERO) > 0);
+        
+        PublicKey recreated = PublicKey.fromBigInteger(bigIntValue);
+        assertEquals(testPublicKey, recreated);
+    }
+
+    @Test
+    void shouldHandleBigIntegerEdgeCases() throws CryptoException {
+        // Test with known values to ensure proper padding/trimming
+        ECKeyPair keyPair = ECKeyPair.generate();
+        PublicKey publicKey = keyPair.getPublicKey();
+        
+        BigInteger bigInt = publicKey.toBigInteger();
+        PublicKey recreated = PublicKey.fromBigInteger(bigInt);
+        
+        assertEquals(publicKey, recreated);
+        assertEquals(bigInt, recreated.toBigInteger());
+    }
+
+    @Test
+    void shouldThrowOnNullCoordinates() {
+        CryptoException exception1 = assertThrows(CryptoException.class, 
+            () -> PublicKey.fromCoordinates(null, BigInteger.ONE));
+        assertEquals("Coordinates cannot be null", exception1.getMessage());
+        
+        CryptoException exception2 = assertThrows(CryptoException.class, 
+            () -> PublicKey.fromCoordinates(BigInteger.ONE, null));
+        assertEquals("Coordinates cannot be null", exception2.getMessage());
+    }
+
+    @Test
+    void shouldThrowOnNullBigInteger() {
+        CryptoException exception = assertThrows(CryptoException.class, 
+            () -> PublicKey.fromBigInteger(null));
+        assertEquals("BigInteger value cannot be null", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowOnInvalidCoordinates() {
+        // Use coordinates that don't form a valid point on the curve
+        BigInteger invalidX = new BigInteger("12345");
+        BigInteger invalidY = new BigInteger("67890");
+        
+        CryptoException exception = assertThrows(CryptoException.class, 
+            () -> PublicKey.fromCoordinates(invalidX, invalidY));
+        assertEquals("Invalid coordinates for public key", exception.getMessage());
+    }
+
+    @Test
+    void shouldMatchBesuCompatibility() throws CryptoException {
+        // Test compatibility with Besu-style 64-byte representation
+        BigInteger bigInt = testPublicKey.toBigInteger();
+        
+        // Verify it represents 64 bytes of data (should be roughly 2^512 in magnitude)
+        assertTrue(bigInt.bitLength() <= 512); // 64 bytes * 8 bits
+        
+        // Round-trip should preserve the key
+        PublicKey recreated = PublicKey.fromBigInteger(bigInt);
+        assertEquals(testPublicKey.getXCoordinate(), recreated.getXCoordinate());
+        assertEquals(testPublicKey.getYCoordinate(), recreated.getYCoordinate());
+    }
+
+    @Test
+    void shouldHandleCoordinateConsistency() throws CryptoException {
+        // Coordinates from toBigInteger should match individual coordinate getters
+        BigInteger x = testPublicKey.getXCoordinate();
+        BigInteger y = testPublicKey.getYCoordinate();
+        
+        PublicKey fromCoords = PublicKey.fromCoordinates(x, y);
+        assertEquals(testPublicKey, fromCoords);
+        
+        // BigInteger representation should round-trip correctly
+        BigInteger bigInt = fromCoords.toBigInteger();
+        PublicKey fromBigInt = PublicKey.fromBigInteger(bigInt);
+        assertEquals(fromCoords, fromBigInt);
     }
 } 

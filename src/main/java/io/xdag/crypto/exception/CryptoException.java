@@ -30,7 +30,7 @@ package io.xdag.crypto.exception;
  * including key generation, signing, verification, and other
  * cryptographic operations.
  */
-public class CryptoException extends Exception {
+public class CryptoException extends RuntimeException {
     
     private static final long serialVersionUID = 1L;
     

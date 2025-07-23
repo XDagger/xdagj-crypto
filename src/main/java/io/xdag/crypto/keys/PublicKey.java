@@ -26,6 +26,7 @@ package io.xdag.crypto.keys;
 import io.xdag.crypto.core.CryptoProvider;
 import io.xdag.crypto.core.KeyValidator;
 import io.xdag.crypto.exception.CryptoException;
+import java.math.BigInteger;
 import java.util.Objects;
 import lombok.Getter;
 import org.apache.tuweni.bytes.Bytes;
@@ -65,11 +66,6 @@ import org.bouncycastle.math.ec.ECPoint;
 @Getter
 public final class PublicKey {
 
-  /**
-   * -- GETTER --
-   *  Returns the underlying ECPoint for advanced operations.
-   *
-   */
   private final ECPoint point;
     
     /**
@@ -253,7 +249,103 @@ public final class PublicKey {
         return AddressUtils.toBase58Address(this, compressed);
     }
 
-  /**
+    /**
+     * Returns the x coordinate of the public key point as BigInteger.
+     * 
+     * @return the x coordinate
+     */
+    public BigInteger getXCoordinate() {
+        return point.getAffineXCoord().toBigInteger();
+    }
+    
+    /**
+     * Returns the y coordinate of the public key point as BigInteger.
+     * 
+     * @return the y coordinate
+     */
+    public BigInteger getYCoordinate() {
+        return point.getAffineYCoord().toBigInteger();
+    }
+    
+    /**
+     * Returns the public key as BigInteger representing 64-byte uncompressed coordinates.
+     * 
+     * <p>This method provides compatibility with Hyperledger Besu's SECPPublicKey format.
+     * The returned BigInteger represents the concatenation of 32-byte x coordinate 
+     * and 32-byte y coordinate (total 64 bytes).
+     * 
+     * @return the public key as BigInteger (64-byte uncompressed format)
+     */
+    public BigInteger toBigInteger() {
+        byte[] uncompressed = toUncompressedBytes().toArrayUnsafe();
+        // Remove the 0x04 prefix, keep only the 64-byte coordinates
+        byte[] coordinates = new byte[64];
+        System.arraycopy(uncompressed, 1, coordinates, 0, 64);
+        return new BigInteger(1, coordinates);
+    }
+    
+    /**
+     * Creates a public key from BigInteger representing 64-byte uncompressed coordinates.
+     * 
+     * <p>This method provides compatibility with Hyperledger Besu's SECPPublicKey format.
+     * The BigInteger should represent the concatenation of 32-byte x coordinate 
+     * and 32-byte y coordinate (total 64 bytes).
+     * 
+     * @param value the BigInteger representing 64-byte uncompressed coordinates
+     * @return a new PublicKey instance
+     * @throws CryptoException if the BigInteger is invalid
+     */
+    public static PublicKey fromBigInteger(BigInteger value) throws CryptoException {
+        if (value == null) {
+            throw new CryptoException("BigInteger value cannot be null");
+        }
+        
+        // Convert BigInteger to 64-byte array
+        byte[] bytes = value.toByteArray();
+        byte[] coordinates = new byte[64];
+        
+        if (bytes.length == 64) {
+            coordinates = bytes;
+        } else if (bytes.length == 65 && bytes[0] == 0) {
+            // Remove leading zero byte
+            System.arraycopy(bytes, 1, coordinates, 0, 64);
+        } else if (bytes.length < 64) {
+            // Pad with leading zeros
+            System.arraycopy(bytes, 0, coordinates, 64 - bytes.length, bytes.length);
+        } else {
+            throw new CryptoException("BigInteger too large for public key coordinates");
+        }
+        
+        // Create uncompressed public key bytes (0x04 + 64 bytes)
+        byte[] uncompressedBytes = new byte[65];
+        uncompressedBytes[0] = 0x04; // Uncompressed format prefix
+        System.arraycopy(coordinates, 0, uncompressedBytes, 1, 64);
+        
+        return fromBytes(uncompressedBytes);
+    }
+    
+    /**
+     * Creates a public key from x and y coordinates.
+     * 
+     * @param x the x coordinate
+     * @param y the y coordinate
+     * @return a new PublicKey instance
+     * @throws CryptoException if the coordinates don't form a valid point on the curve
+     */
+    public static PublicKey fromCoordinates(BigInteger x, BigInteger y) throws CryptoException {
+        if (x == null || y == null) {
+            throw new CryptoException("Coordinates cannot be null");
+        }
+        
+        try {
+            ECPoint point = CryptoProvider.getCurve().getCurve().createPoint(x, y);
+            return fromPoint(point);
+        } catch (Exception e) {
+            throw new CryptoException("Invalid coordinates for public key", e);
+        }
+    }
+
+    /**
      * Checks if this public key is in compressed format by default.
      * 
      * @return true if the public key is typically used in compressed format
