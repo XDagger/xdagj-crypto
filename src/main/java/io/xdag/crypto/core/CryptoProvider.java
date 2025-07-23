@@ -23,7 +23,11 @@
  */
 package io.xdag.crypto.core;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
 import java.security.Security;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -32,11 +36,18 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 
 /**
- * Utility class for managing the Bouncy Castle security provider and cryptographic curve parameters.
+ * Unified cryptographic provider that manages Bouncy Castle security provider,
+ * curve parameters, and secure random number generation.
  *
- * <p>This class manages the initialization of the BouncyCastle security provider
- * and provides access to standard cryptographic parameters, such as the SECP256K1
- * curve, used throughout the library.
+ * <p>This class provides:
+ * - Bouncy Castle provider installation and management
+ * - SECP256K1 elliptic curve parameters
+ * - Thread-safe cryptographically secure random number generation
+ *
+ * <p>Design decisions:
+ * - Uses a global SecureRandom instance rather than ThreadLocal instances
+ * - SecureRandom is inherently thread-safe, so no additional synchronization needed
+ * - Simpler design prioritizes code clarity over micro-optimizations
  *
  * @see <a href="http://www.bouncycastle.org/wiki/display/JA1/Provider+Installation">Bouncy Castle Provider Installation</a>
  */
@@ -57,11 +68,14 @@ public final class CryptoProvider {
     private static final ECDomainParameters CURVE_DOMAIN = new ECDomainParameters(
             CURVE_PARAMS.getCurve(), CURVE_PARAMS.getG(), CURVE_PARAMS.getN(), CURVE_PARAMS.getH());
 
-    private static volatile boolean initialized = false;
+    // Global SecureRandom instance - SecureRandom is thread-safe by design
+    private static volatile SecureRandom secureRandom;
+    
+    private static final AtomicBoolean initialized = new AtomicBoolean(false);
     private static final Object INIT_LOCK = new Object();
 
     static {
-        install();
+        initialize();
         CURVE = new ECParameterSpec(
                 CURVE_PARAMS.getCurve(),
                 CURVE_PARAMS.getG(),
@@ -73,26 +87,43 @@ public final class CryptoProvider {
         // Utility class
     }
 
+    // ============================= Provider Management =============================
+
     /**
-     * Initializes and registers the Bouncy Castle security provider.
+     * Initializes the cryptographic provider and registers the Bouncy Castle security provider.
      * This method is thread-safe and idempotent.
      */
-    public static void install() {
-        if (!initialized) {
+    public static void initialize() {
+        if (!initialized.get()) {
             synchronized (INIT_LOCK) {
-                if (!initialized) {
+                if (!initialized.get()) {
                     if (Security.getProvider(BOUNCY_CASTLE_PROVIDER) == null) {
                         Security.addProvider(new BouncyCastleProvider());
                         log.info("Bouncy Castle provider registered successfully.");
                     } else {
                         log.debug("Bouncy Castle provider is already registered.");
                     }
-                    initialized = true;
+                    
+                    // Initialize the global SecureRandom instance
+                    secureRandom = createSecureRandom();
+                    
+                    initialized.set(true);
                     log.info("CryptoProvider initialized.");
                 }
             }
         }
     }
+
+    /**
+     * Checks if the crypto provider has been initialized.
+     *
+     * @return true if initialized, false otherwise
+     */
+    public static boolean isInstalled() {
+        return initialized.get();
+    }
+
+    // ============================= Curve Parameters =============================
 
     /**
      * Returns the SECP256K1 curve domain parameters.
@@ -103,12 +134,124 @@ public final class CryptoProvider {
         return CURVE_DOMAIN;
     }
 
+    // ============================= Secure Random Generation =============================
+
     /**
-     * Checks if the crypto provider has been initialized.
-     *
-     * @return true if initialized, false otherwise
+     * Returns the global {@link SecureRandom} instance.
+     * 
+     * <p><strong>Thread Safety:</strong> SecureRandom is inherently thread-safe according to 
+     * Oracle's documentation. This single global instance can be safely used by multiple 
+     * threads concurrently without additional synchronization.
+     * 
+     * <p>This method ensures the SecureRandom instance is always available and never returns null.
+     * 
+     * @return the global SecureRandom instance, never null
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/security/SecureRandom.html">SecureRandom Thread Safety</a>
      */
-    public static boolean isInstalled() {
-        return initialized;
+    public static SecureRandom getSecureRandom() {
+        SecureRandom instance = secureRandom;
+        if (instance == null) {
+            // This should never happen due to static initialization, but provide safety
+            synchronized (INIT_LOCK) {
+                if (secureRandom == null) {
+                    initialize();
+                }
+                instance = secureRandom;
+            }
+        }
+        return instance;
+    }
+    
+    /**
+     * Generates a specified number of random bytes.
+     *
+     * @param numBytes the number of random bytes to generate
+     * @return a byte array containing the random bytes
+     * @throws IllegalArgumentException if numBytes is negative
+     */
+    public static byte[] getRandomBytes(int numBytes) {
+        if (numBytes < 0) {
+            throw new IllegalArgumentException("Number of bytes must be non-negative.");
+        }
+        byte[] bytes = new byte[numBytes];
+        getSecureRandom().nextBytes(bytes);
+        return bytes;
+    }
+    
+    /**
+     * Generate a cryptographically secure random integer.
+     * 
+     * @return a random integer
+     */
+    public static int getRandomInt() {
+        return getSecureRandom().nextInt();
+    }
+    
+    /**
+     * Generate a cryptographically secure random long.
+     * 
+     * @return a random long
+     */
+    public static long getRandomLong() {
+        return getSecureRandom().nextLong();
+    }
+
+    /**
+     * Reseed the global SecureRandom instance with entropy from the system.
+     * 
+     * <p><strong>Note:</strong> In most cases, manual reseeding is unnecessary as SecureRandom 
+     * automatically reseeds itself as needed. This method is provided for special cases where
+     * explicit reseeding is required.
+     * 
+     * <p>This method uses SecureRandom's own seed generation rather than potentially 
+     * predictable sources like System.nanoTime().
+     * 
+     * @throws UnsupportedOperationException if the underlying SecureRandom implementation 
+     *         does not support manual reseeding
+     */
+    public static void reseed() {
+        SecureRandom sr = getSecureRandom();
+        try {
+            // Use SecureRandom's own generateSeed method for cryptographically secure entropy
+            byte[] seed = sr.generateSeed(32); // 256 bits of entropy
+            sr.setSeed(seed);
+            log.debug("Reseeded global SecureRandom instance with 256 bits of entropy");
+        } catch (Exception e) {
+            log.warn("Failed to reseed SecureRandom, it will continue with automatic seeding", e);
+            throw new UnsupportedOperationException("Manual reseeding not supported by this SecureRandom implementation", e);
+        }
+    }
+
+    // ============================= Internal Methods =============================
+
+    /**
+     * Creates and configures a new {@link SecureRandom} instance.
+     * This method attempts to use the most secure random implementation available.
+     *
+     * @return a new configured {@link SecureRandom} instance
+     */
+    private static SecureRandom createSecureRandom() {
+        // Try Bouncy Castle's SHA1PRNG first (more widely supported than DRBG)
+        try {
+            SecureRandom random = SecureRandom.getInstance("SHA1PRNG", BOUNCY_CASTLE_PROVIDER);
+            log.info("Using SHA1PRNG algorithm from Bouncy Castle provider.");
+            return random;
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+            log.debug("Bouncy Castle SHA1PRNG not available. Trying platform default.", e);
+        }
+
+        // Try the default platform implementation
+        try {
+            SecureRandom random = SecureRandom.getInstanceStrong();
+            log.info("Using platform's strong SecureRandom implementation.");
+            return random;
+        } catch (NoSuchAlgorithmException e) {
+            log.debug("Strong SecureRandom not available. Using default.", e);
+        }
+
+        // Fallback to the simplest but still secure SecureRandom
+        SecureRandom random = new SecureRandom();
+        log.info("Using platform default SecureRandom implementation.");
+        return random;
     }
 } 

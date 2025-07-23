@@ -27,16 +27,33 @@ import io.xdag.crypto.encoding.Base58;
 import io.xdag.crypto.exception.AddressFormatException;
 import io.xdag.crypto.hash.HashUtils;
 import org.apache.tuweni.bytes.Bytes;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 
 /**
  * Address generation and validation utility for XDAG.
  *
- * <p>This class provides methods for generating XDAG addresses from public keys
- * using the hash160 algorithm (SHA-256 followed by RIPEMD-160) and for
- * converting between byte representations and Base58Check encoding.
+ * <p>This class provides methods for generating XDAG addresses using the hash160 
+ * algorithm (SHA-256 followed by RIPEMD-160) and for converting between byte 
+ * representations and Base58Check encoding.
+ * 
+ * <p>The class prioritizes modern type-safe APIs by providing direct support for
+ * {@link PrivateKey}, {@link PublicKey}, and {@link ECKeyPair} instances. While methods
+ * that accept raw {@code byte[]} or {@link org.apache.tuweni.bytes.Bytes} are available
+ * for compatibility, the type-safe alternatives are recommended for new code.
+ *
+ * <h3>Recommended Usage:</h3>
+ * <pre>{@code
+ * // From PrivateKey
+ * PrivateKey privateKey = PrivateKey.generateRandom();
+ * String address = AddressUtils.toBase58Address(privateKey);
+ * 
+ * // From PublicKey
+ * PublicKey publicKey = privateKey.getPublicKey();
+ * Bytes addressBytes = AddressUtils.toBytesAddress(publicKey);
+ * 
+ * // From ECKeyPair
+ * ECKeyPair keyPair = ECKeyPair.generate();
+ * String address = AddressUtils.toBase58Address(keyPair);
+ * }</pre>
  */
 public final class AddressUtils {
 
@@ -48,59 +65,138 @@ public final class AddressUtils {
     }
 
     /**
-     * Generate XDAG address bytes from a key pair.
+     * Generate XDAG address bytes from a PrivateKey using compressed public key.
      *
-     * @param keyPair The key pair to generate the address from.
+     * @param privateKey The PrivateKey to generate the address from.
      * @return The 20-byte address as Bytes.
      */
-    public static Bytes toBytesAddress(AsymmetricCipherKeyPair keyPair) {
-        return toBytesAddress(keyPair.getPublic());
+    public static Bytes toBytesAddress(PrivateKey privateKey) {
+        return toBytesAddress(privateKey.getPublicKey());
     }
 
     /**
-     * Generate XDAG address bytes from a public key.
+     * Generate XDAG address bytes from a PrivateKey, specifying the public key format.
      *
-     * @param publicKey The public key to generate the address from.
+     * @param privateKey The PrivateKey to generate the address from.
+     * @param compressed Whether to use the compressed public key format.
      * @return The 20-byte address as Bytes.
      */
-    public static Bytes toBytesAddress(AsymmetricKeyParameter publicKey) {
+    public static Bytes toBytesAddress(PrivateKey privateKey, boolean compressed) {
+        return toBytesAddress(privateKey.getPublicKey(), compressed);
+    }
+
+    /**
+     * Generate XDAG address bytes from a PublicKey using compressed format.
+     *
+     * @param publicKey The PublicKey to generate the address from.
+     * @return The 20-byte address as Bytes.
+     */
+    public static Bytes toBytesAddress(PublicKey publicKey) {
         return toBytesAddress(publicKey, true);
     }
 
     /**
-     * Generate XDAG address bytes from a public key, specifying the public key format.
+     * Generate XDAG address bytes from a PublicKey, specifying the format.
      *
-     * @param publicKey The public key to generate the address from.
+     * @param publicKey The PublicKey to generate the address from.
      * @param compressed Whether to use the compressed public key format.
      * @return The 20-byte address as Bytes.
      */
-    public static Bytes toBytesAddress(AsymmetricKeyParameter publicKey, boolean compressed) {
-        ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters) publicKey;
-        byte[] publicKeyBytes = ecPublicKey.getQ().getEncoded(compressed);
-        return HashUtils.sha256hash160(Bytes.wrap(publicKeyBytes));
+    public static Bytes toBytesAddress(PublicKey publicKey, boolean compressed) {
+        Bytes publicKeyBytes = compressed ? publicKey.toCompressedBytes() : publicKey.toUncompressedBytes();
+        return HashUtils.sha256hash160(publicKeyBytes);
     }
 
     /**
-     * Generate a Base58Check encoded address from a key pair.
+     * Generate XDAG address bytes from an ECKeyPair using compressed public key.
      *
-     * @param keyPair The key pair.
+     * @param keyPair The ECKeyPair to generate the address from.
+     * @return The 20-byte address as Bytes.
+     */
+    public static Bytes toBytesAddress(ECKeyPair keyPair) {
+        return toBytesAddress(keyPair, true);
+    }
+
+    /**
+     * Generate XDAG address bytes from an ECKeyPair, specifying the public key format.
+     *
+     * @param keyPair The ECKeyPair to generate the address from.
+     * @param compressed Whether to use the compressed public key format.
+     * @return The 20-byte address as Bytes.
+     */
+    public static Bytes toBytesAddress(ECKeyPair keyPair, boolean compressed) {
+        Bytes publicKeyBytes = compressed ? keyPair.getPublicKey().toCompressedBytes() : keyPair.getPublicKey().toUncompressedBytes();
+        return HashUtils.sha256hash160(publicKeyBytes);
+    }
+
+
+
+    /**
+     * Generate a Base58Check encoded address from a PrivateKey using compressed public key.
+     *
+     * @param privateKey The PrivateKey.
      * @return The Base58Check encoded address string.
      */
-    public static String toBase58Address(AsymmetricCipherKeyPair keyPair) {
+    public static String toBase58Address(PrivateKey privateKey) {
+        return toBase58Address(privateKey.getPublicKey());
+    }
+
+    /**
+     * Generate a Base58Check encoded address from a PrivateKey, specifying the public key format.
+     *
+     * @param privateKey The PrivateKey.
+     * @param compressed Whether to use the compressed public key format.
+     * @return The Base58Check encoded address string.
+     */
+    public static String toBase58Address(PrivateKey privateKey, boolean compressed) {
+        return toBase58Address(privateKey.getPublicKey(), compressed);
+    }
+
+    /**
+     * Generate a Base58Check encoded address from a PublicKey using compressed format.
+     *
+     * @param publicKey The PublicKey.
+     * @return The Base58Check encoded address string.
+     */
+    public static String toBase58Address(PublicKey publicKey) {
+        return toBase58Address(publicKey, true);
+    }
+
+    /**
+     * Generate a Base58Check encoded address from a PublicKey, specifying the format.
+     *
+     * @param publicKey The PublicKey.
+     * @param compressed Whether to use the compressed public key format.
+     * @return The Base58Check encoded address string.
+     */
+    public static String toBase58Address(PublicKey publicKey, boolean compressed) {
+        Bytes addressBytes = toBytesAddress(publicKey, compressed);
+        return Base58.encodeCheck(addressBytes);
+    }
+
+    /**
+     * Generate a Base58Check encoded address from an ECKeyPair using compressed public key.
+     *
+     * @param keyPair The ECKeyPair.
+     * @return The Base58Check encoded address string.
+     */
+    public static String toBase58Address(ECKeyPair keyPair) {
         return toBase58Address(keyPair, true);
     }
 
     /**
-     * Generate a Base58Check encoded address from a key pair.
+     * Generate a Base58Check encoded address from an ECKeyPair.
      *
-     * @param keyPair The key pair.
+     * @param keyPair The ECKeyPair.
      * @param compressed Whether to use the compressed public key format.
      * @return The Base58Check encoded address string.
      */
-    public static String toBase58Address(AsymmetricCipherKeyPair keyPair, boolean compressed) {
-        Bytes addressBytes = toBytesAddress(keyPair.getPublic(), compressed);
+    public static String toBase58Address(ECKeyPair keyPair, boolean compressed) {
+        Bytes addressBytes = toBytesAddress(keyPair, compressed);
         return Base58.encodeCheck(addressBytes);
     }
+
+
 
     /**
      * Convert a Base58Check encoded address back to its byte representation.
