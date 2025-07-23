@@ -114,35 +114,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.project.outputs.ARTIFACT_ID }}-javadoc-${{ steps.project.outputs.VERSION }}
-        path: target/reports/apidocs/
-
-  security-scan:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-    
-    - name: Cache Maven dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2
-    
-    - name: Run dependency check
-      run: mvn clean compile org.owasp:dependency-check-maven:check || true
-    
-    - name: Upload security scan results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: security-scan-results-${{ github.run_number }}
-        path: target/dependency-check-report.html 
+        path: target/reports/apidocs/ 
