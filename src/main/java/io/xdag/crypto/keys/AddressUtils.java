@@ -40,7 +40,7 @@ import org.apache.tuweni.bytes.Bytes;
  * that accept raw {@code byte[]} or {@link org.apache.tuweni.bytes.Bytes} are available
  * for compatibility, the type-safe alternatives are recommended for new code.
  *
- * <h3>Recommended Usage:</h3>
+ * <p><strong>Recommended Usage:</strong></p>
  * <pre>{@code
  * // From PrivateKey
  * PrivateKey privateKey = PrivateKey.generateRandom();

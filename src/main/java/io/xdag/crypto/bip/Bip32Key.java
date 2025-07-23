@@ -41,8 +41,7 @@ import org.apache.tuweni.bytes.Bytes32;
  *   <li>Metadata about its position in the derivation tree</li>
  * </ul>
  * 
- * <p>This class provides both modern API (using {@link ECKeyPair}) and legacy compatibility
- * (via {@link #rawKeyPair()}) for existing code.
+ * <p>This class provides a modern API using {@link ECKeyPair} for type-safe key management.
  *
  * @param keyPair The ECKeyPair containing the cryptographic keys.
  * @param chainCode The 32-byte chain code for this key, used for child key derivation.

@@ -112,7 +112,7 @@ public final class Aes {
     /**
      * Decrypts data using AES-256-GCM.
      *
-     * @param cipherTextWithTag The encrypted data, which includes the ciphertext followed by the
+     * @param cipherText The encrypted data, which includes the ciphertext followed by the
      *     16-byte authentication tag.
      * @param key The 32-byte decryption key.
      * @param nonce The 12-byte nonce (IV) that was used for encryption.
