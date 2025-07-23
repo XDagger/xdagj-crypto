@@ -24,7 +24,17 @@
 package io.xdag.crypto.exception;
 
 /**
- * Exception thrown when an address format is invalid
+ * Exception thrown when an address format is invalid.
+ * 
+ * <p>This exception indicates problems with address formatting, including:
+ * - Invalid characters in the address string
+ * - Incorrect address length
+ * - Failed checksum validation
+ * 
+ * <p>Specialized subclasses provide more specific error information:
+ * - {@link InvalidCharacter} - for invalid characters at specific positions
+ * - {@link InvalidDataLength} - for addresses with wrong length
+ * - {@link InvalidChecksum} - for checksum validation failures
  */
 public class AddressFormatException extends IllegalArgumentException {
     private static final long serialVersionUID = 1L;

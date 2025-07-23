@@ -61,7 +61,7 @@ public final class Base58 {
         // Utility class - prevent instantiation
     }
     
-        /**
+    /**
      * Encode a Bytes object to Base58 string.
      * 
      * @param input the Bytes object to encode
@@ -108,7 +108,7 @@ public final class Base58 {
         
         return new String(encoded, outputStart, encoded.length - outputStart);
     }
-
+    
     /**
      * Encode a byte array to Base58 string.
      * Legacy compatibility method - prefer {@link #encode(Bytes)}.

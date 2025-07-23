@@ -31,9 +31,15 @@ import org.bouncycastle.crypto.io.DigestOutputStream;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A custom SHA-256 digest implementation tailored for XDAG's specific hashing requirements,
- * including double hashing with a final byte reversal and state extraction for interoperability
- * with C implementations.
+ * A custom SHA-256 digest implementation tailored for XDAG's specific hashing requirements.
+ * 
+ * <p>This implementation provides XDAG-specific hash behavior including:
+ * - Double SHA-256 hashing (hash of hash)
+ * - Final byte reversal for endianness compatibility
+ * - State extraction for interoperability with C implementations
+ * 
+ * <p>This class wraps Bouncy Castle's SHA256Digest to provide the exact
+ * hash semantics required by the XDAG blockchain protocol.
  */
 public class XdagSha256Digest {
 
