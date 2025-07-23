@@ -23,92 +23,194 @@
  */
 package io.xdag.crypto.keys;
 
+import io.xdag.crypto.core.CryptoProvider;
 import java.math.BigInteger;
 import java.util.Objects;
-import lombok.Getter;
+import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.MutableBytes;
+import org.apache.tuweni.units.bigints.UInt256;
 
 /**
- * Represents an ECDSA signature with recovery capability.
+ * Represents an ECDSA signature with recovery capability for XDAG cryptographic operations.
  * 
  * <p>This class encapsulates the three components of an ECDSA signature:
  * <ul>
  *   <li><strong>r</strong> - The r component of the signature</li>
  *   <li><strong>s</strong> - The s component of the signature</li>
- *   <li><strong>v</strong> - The recovery ID (with offset)</li>
+ *   <li><strong>recId</strong> - The recovery ID (0 or 1)</li>
  * </ul>
  * 
  * <p>The signature follows Bitcoin's canonical format where s-values are normalized
  * to the lower half of the curve order to prevent signature malleability.
  * 
+ * <p>This implementation is compatible with Hyperledger Besu's SECPSignature format
+ * while providing additional XDAG-specific functionality.
+ * 
  * <p>This class is immutable and thread-safe.
  * 
  * @see Signer
  */
-@Getter
 public final class Signature {
 
-    /** The recovery ID offset used in ECDSA signatures. */
-    public static final int RECOVERY_ID_OFFSET = 27;
-
-  /**
-   *  Gets the recovery ID with offset.
-   */
-  private final byte v;
-
-  /**
-   *  Gets the r component of the signature.
-   */
-  private final BigInteger r;
-
-  /**
-   *  Gets the s component of the signature.
-   */
-  private final BigInteger s;
+    /** The constant bytes required for encoded signature. */
+    public static final int BYTES_REQUIRED = 65;
 
     /**
-     * Creates a new Signature instance.
-     * 
-     * @param v the recovery ID (with offset)
-     * @param r the r component of the signature
-     * @param s the s component of the signature
+     * The recovery id to reconstruct the public key used to create the signature.
+     *
+     * <p>The recId is an index from 0 to 1 which indicates which of the 2 possible keys is the
+     * correct one. Because the key recovery operation yields multiple potential keys, the correct key
+     * must either be stored alongside the signature, or you must be willing to try each recId in turn
+     * until you find one that outputs the key you are expecting.
      */
-    public Signature(byte v, BigInteger r, BigInteger s) {
-        this.v = v;
-        this.r = Objects.requireNonNull(r, "r cannot be null");
-        this.s = Objects.requireNonNull(s, "s cannot be null");
+    private final byte recId;
+
+    private final BigInteger r;
+    private final BigInteger s;
+
+    private volatile Bytes encodedCache;
+
+    /**
+     * Instantiates a new Signature.
+     *
+     * @param r the r component
+     * @param s the s component  
+     * @param recId the recovery id (0 or 1)
+     */
+    public Signature(final BigInteger r, final BigInteger s, final byte recId) {
+        this.r = r;
+        this.s = s;
+        this.recId = recId;
     }
 
     /**
-     * Creates a Signature from byte components.
-     * 
-     * @param v the recovery ID (with offset)
-     * @param r the r component as 32-byte array
-     * @param s the s component as 32-byte array
-     * @return a new Signature instance
+     * Creates a new signature object given its parameters.
+     *
+     * @param r the 'r' part of the signature.
+     * @param s the 's' part of the signature.
+     * @param recId the recovery id part of the signature (0 or 1).
+     * @return the created {@link Signature} object.
+     * @throws NullPointerException if {@code r} or {@code s} are {@code null}.
+     * @throws IllegalArgumentException if any argument is invalid.
      */
-    public static Signature of(byte v, Bytes32 r, Bytes32 s) {
-        return new Signature(v, 
-            new BigInteger(1, r.toArrayUnsafe()),
-            new BigInteger(1, s.toArrayUnsafe()));
+    public static Signature create(final BigInteger r, final BigInteger s, final byte recId) {
+        Objects.requireNonNull(r, "r cannot be null");
+        Objects.requireNonNull(s, "s cannot be null");
+        
+        BigInteger curveOrder = CryptoProvider.getCurve().getN();
+        checkInBounds("r", r, curveOrder);
+        checkInBounds("s", s, curveOrder);
+        
+        if (recId != 0 && recId != 1) {
+            throw new IllegalArgumentException(
+                "Invalid 'recId' value, should be 0 or 1 but got " + recId);
+        }
+        
+        return new Signature(r, s, recId);
     }
 
-  /**
-     * Gets the recovery ID without offset.
-     * 
-     * @return the recovery ID (0 or 1)
-     */
-    public int getRecoveryId() {
-        return v - RECOVERY_ID_OFFSET;
+    private static void checkInBounds(
+        final String name, final BigInteger i, final BigInteger curveOrder) {
+        if (i.compareTo(BigInteger.ONE) < 0) {
+            throw new IllegalArgumentException(
+                String.format("Invalid '%s' value, should be >= 1 but got %s", name, i));
+        }
+
+        if (i.compareTo(curveOrder) >= 0) {
+            throw new IllegalArgumentException(
+                String.format("Invalid '%s' value, should be < %s but got %s", name, curveOrder));
+        }
     }
 
-  /**
+    /**
+     * Decode signature from bytes.
+     *
+     * @param bytes the 65-byte encoded signature
+     * @return the decoded signature
+     * @throws IllegalArgumentException if bytes length is not 65
+     */
+    public static Signature decode(final Bytes bytes) {
+        if (bytes.size() != BYTES_REQUIRED) {
+            throw new IllegalArgumentException(
+                String.format("encoded ECDSA signature must be 65 bytes long, got %s", bytes.size()));
+        }
+
+        final BigInteger r = bytes.slice(0, 32).toUnsignedBigInteger();
+        final BigInteger s = bytes.slice(32, 32).toUnsignedBigInteger();
+        final byte recId = bytes.get(64);
+        return Signature.create(r, s, recId);
+    }
+
+    /**
+     * Decode signature from byte array.
+     *
+     * @param bytes the 65-byte encoded signature
+     * @return the decoded signature
+     */
+    public static Signature decode(final byte[] bytes) {
+        return decode(Bytes.wrap(bytes));
+    }
+
+    /**
+     * Returns the encoded bytes of this signature.
+     *
+     * @return the 65-byte encoded signature
+     */
+    public Bytes encodedBytes() {
+        if (encodedCache == null) {
+            synchronized (this) {
+                if (encodedCache == null) {
+                    encodedCache = _encodedBytes();
+                }
+            }
+        }
+        return encodedCache;
+    }
+
+    private Bytes _encodedBytes() {
+        final MutableBytes bytes = MutableBytes.create(BYTES_REQUIRED);
+        UInt256.valueOf(r).copyTo(bytes, 0);
+        UInt256.valueOf(s).copyTo(bytes, 32);
+        bytes.set(64, recId);
+        return bytes;
+    }
+
+    /**
+     * Gets the recovery ID.
+     *
+     * @return the recovery id (0 or 1)
+     */
+    public byte getRecId() {
+        return recId;
+    }
+
+    /**
+     * Gets the r component.
+     *
+     * @return the r value
+     */
+    public BigInteger getR() {
+        return r;
+    }
+
+    /**
+     * Gets the s component.
+     *
+     * @return the s value
+     */
+    public BigInteger getS() {
+        return s;
+    }
+
+    /**
      * Gets the r component as a 32-byte array.
      * 
      * @return the r component as Bytes32
      */
     public Bytes32 getRBytes() {
-        return Bytes32.leftPad(org.apache.tuweni.bytes.Bytes.of(r.toByteArray()));
+        return toBytes32(r);
     }
 
     /**
@@ -117,7 +219,30 @@ public final class Signature {
      * @return the s component as Bytes32
      */
     public Bytes32 getSBytes() {
-        return Bytes32.leftPad(org.apache.tuweni.bytes.Bytes.of(s.toByteArray()));
+        return toBytes32(s);
+    }
+
+    /**
+     * Converts a BigInteger to a 32-byte array, handling the sign byte correctly.
+     */
+    private static Bytes32 toBytes32(BigInteger value) {
+        byte[] bytes = value.toByteArray();
+        
+        if (bytes.length == 32) {
+            return Bytes32.wrap(bytes);
+        } else if (bytes.length == 33 && bytes[0] == 0) {
+            // Remove leading zero byte
+            byte[] trimmed = new byte[32];
+            System.arraycopy(bytes, 1, trimmed, 0, 32);
+            return Bytes32.wrap(trimmed);
+        } else if (bytes.length < 32) {
+            // Pad with leading zeros
+            byte[] padded = new byte[32];
+            System.arraycopy(bytes, 0, padded, 32 - bytes.length, bytes.length);
+            return Bytes32.wrap(padded);
+        } else {
+            throw new IllegalArgumentException("BigInteger too large for 32 bytes");
+        }
     }
 
     /**
@@ -126,53 +251,34 @@ public final class Signature {
      * @return true if the signature is canonical
      */
     public boolean isCanonical() {
-        return s.compareTo(Signer.HALF_CURVE_ORDER) <= 0;
+        BigInteger halfCurveOrder = CryptoProvider.getCurve().getN().shiftRight(1);
+        return s.compareTo(halfCurveOrder) <= 0;
     }
 
-    /**
-     * Converts this signature to DER format.
-     * 
-     * @return DER-encoded signature bytes
-     */
-    public byte[] toDER() {
-        // DER encoding implementation
-        byte[] rBytes = r.toByteArray();
-        byte[] sBytes = s.toByteArray();
-        
-        int totalLength = 4 + rBytes.length + sBytes.length;
-        byte[] result = new byte[totalLength + 2];
-        
-        result[0] = 0x30; // SEQUENCE
-        result[1] = (byte) totalLength;
-        result[2] = 0x02; // INTEGER (r)
-        result[3] = (byte) rBytes.length;
-        System.arraycopy(rBytes, 0, result, 4, rBytes.length);
-        
-        int sOffset = 4 + rBytes.length;
-        result[sOffset] = 0x02; // INTEGER (s)
-        result[sOffset + 1] = (byte) sBytes.length;
-        System.arraycopy(sBytes, 0, result, sOffset + 2, sBytes.length);
-        
-        return result;
-    }
+
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof Signature other)) return false;
+    public boolean equals(final Object other) {
+        if (!(other instanceof Signature)) {
+            return false;
+        }
 
-      return v == other.v &&
-               Objects.equals(r, other.r) && 
-               Objects.equals(s, other.s);
+        final Signature that = (Signature) other;
+        return this.r.equals(that.r) && this.s.equals(that.s) && this.recId == that.recId;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(v, r, s);
+        return Objects.hash(r, s, recId);
     }
 
     @Override
     public String toString() {
-        return String.format("Signature{v=%d, r=%s, s=%s}", v, r.toString(16), s.toString(16));
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Signature").append("{");
+        sb.append("r=").append(r.toString(16)).append(", ");
+        sb.append("s=").append(s.toString(16)).append(", ");
+        sb.append("recId=").append(recId);
+        return sb.append("}").toString();
     }
 } 
