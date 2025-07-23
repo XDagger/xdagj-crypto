@@ -27,6 +27,7 @@ import io.xdag.crypto.core.CryptoProvider;
 import io.xdag.crypto.core.KeyValidator;
 import io.xdag.crypto.exception.CryptoException;
 import java.util.Objects;
+import lombok.Getter;
 import org.apache.tuweni.bytes.Bytes;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -61,9 +62,15 @@ import org.bouncycastle.math.ec.ECPoint;
  * @see ECKeyPair
  * @see AddressUtils
  */
+@Getter
 public final class PublicKey {
-    
-    private final ECPoint point;
+
+  /**
+   * -- GETTER --
+   *  Returns the underlying ECPoint for advanced operations.
+   *
+   */
+  private final ECPoint point;
     
     /**
      * Creates a public key from an ECPoint.
@@ -245,17 +252,8 @@ public final class PublicKey {
     public String toBase58Address(boolean compressed) {
         return AddressUtils.toBase58Address(this, compressed);
     }
-    
-    /**
-     * Returns the underlying ECPoint for advanced operations.
-     * 
-     * @return the ECPoint representing this public key
-     */
-    public ECPoint getPoint() {
-        return point;
-    }
-    
-    /**
+
+  /**
      * Checks if this public key is in compressed format by default.
      * 
      * @return true if the public key is typically used in compressed format

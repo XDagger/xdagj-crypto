@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.xdag.crypto.core.CryptoProvider;
 import io.xdag.crypto.exception.CryptoException;
 import java.math.BigInteger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +27,7 @@ class SignatureTest {
     }
     
     @BeforeEach
-    void setUpEach() throws CryptoException {
+    void setUpEach() {
         Bytes32 messageHash = Bytes32.fromHexString("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef");
         testSignature = Signer.sign(messageHash, testKeyPair.getPrivateKey());
     }
@@ -142,7 +141,7 @@ class SignatureTest {
     }
 
     @Test
-    void shouldVerifySignature() throws CryptoException {
+    void shouldVerifySignature() {
         Bytes32 messageHash = Bytes32.fromHexString("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef");
         assertTrue(Signer.verify(messageHash, testSignature, testKeyPair.getPublicKey()));
         

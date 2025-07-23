@@ -29,7 +29,7 @@ import io.xdag.crypto.exception.CryptoException;
 import java.math.BigInteger;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.math.ec.ECPoint;
 
 /**
  * Represents an elliptic curve private key for XDAG cryptographic operations.
@@ -159,8 +159,7 @@ public final class PrivateKey {
      * @return the corresponding PublicKey
      */
     public PublicKey getPublicKey() {
-        ECPrivateKeyParameters privateKeyParams = new ECPrivateKeyParameters(value, CryptoProvider.getCurve());
-        org.bouncycastle.math.ec.ECPoint publicKeyPoint = CryptoProvider.getCurve().getG().multiply(value);
+        ECPoint publicKeyPoint = CryptoProvider.getCurve().getG().multiply(value);
         return PublicKey.fromPoint(publicKeyPoint);
     }
     

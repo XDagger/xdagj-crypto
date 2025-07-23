@@ -123,26 +123,7 @@ public final class KeyValidator {
             throw new CryptoException(fieldName + " cannot be null");
         }
     }
-    
-    /**
-     * Validates that a Bytes object has the expected size.
-     * 
-     * @param bytes the Bytes to validate
-     * @param expectedSize the expected size in bytes
-     * @param fieldName descriptive name for error messages
-     * @throws CryptoException if bytes is null or has wrong size
-     */
-    public static void validateBytesSize(Bytes bytes, int expectedSize, String fieldName) throws CryptoException {
-        if (bytes == null) {
-            throw new CryptoException(fieldName + " cannot be null");
-        }
-        
-        if (bytes.size() != expectedSize) {
-            throw new CryptoException(fieldName + " must be exactly " + expectedSize + 
-                                    " bytes, got " + bytes.size());
-        }
-    }
-    
+
     /**
      * Validates that a hex string represents exactly 32 bytes (64 hex characters).
      * 

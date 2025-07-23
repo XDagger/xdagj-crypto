@@ -25,7 +25,6 @@ package io.xdag.crypto.keys;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.xdag.crypto.core.CryptoProvider;
 import io.xdag.crypto.exception.AddressFormatException;
 import io.xdag.crypto.exception.CryptoException;
 import org.apache.tuweni.bytes.Bytes;

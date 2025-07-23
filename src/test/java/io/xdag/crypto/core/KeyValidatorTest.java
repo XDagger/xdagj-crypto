@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.xdag.crypto.exception.CryptoException;
 import java.math.BigInteger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**

@@ -116,7 +116,7 @@ public class AesTest {
 
     @Test
     void shouldThrowOnDecryptWithNullKey() {
-        Bytes ciphertext = Bytes.wrap(new byte[32]); // Dummy ciphertext
+        Bytes ciphertext = Bytes.wrap(new byte[32]);
         Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.decrypt(ciphertext, null, nonce));
@@ -125,7 +125,7 @@ public class AesTest {
 
     @Test
     void shouldThrowOnDecryptWithNullNonce() {
-        Bytes ciphertext = Bytes.wrap(new byte[32]); // Dummy ciphertext
+        Bytes ciphertext = Bytes.wrap(new byte[32]);
         Bytes32 key = Bytes32.random();
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.decrypt(ciphertext, key, null));

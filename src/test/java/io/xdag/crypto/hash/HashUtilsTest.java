@@ -97,7 +97,7 @@ public class HashUtilsTest {
         assertTrue(HashUtils.constantTimeEquals(a, b));
         assertFalse(HashUtils.constantTimeEquals(a, c));
         assertFalse(HashUtils.constantTimeEquals(a, d));
-        assertTrue(HashUtils.constantTimeEquals((Bytes) null, (Bytes) null));
+        assertTrue(HashUtils.constantTimeEquals(null, (Bytes) null));
         assertFalse(HashUtils.constantTimeEquals(a, null));
         assertFalse(HashUtils.constantTimeEquals(null, b));
     }

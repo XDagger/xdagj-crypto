@@ -105,9 +105,8 @@ public final class Signer {
      * @param messageHash the 32-byte message hash to sign
      * @param privateKey the private key to use for signing
      * @return a canonical signature with recovery capability
-     * @throws CryptoException if signing fails
      */
-    public static Signature sign(Bytes32 messageHash, PrivateKey privateKey) throws CryptoException {
+    public static Signature sign(Bytes32 messageHash, PrivateKey privateKey) {
         return signInternal(messageHash, privateKey.toBigInteger(), privateKey.getPublicKey().getPoint());
     }
 

@@ -24,8 +24,8 @@
 package io.xdag.crypto.keys;
 
 import io.xdag.crypto.exception.CryptoException;
-import java.math.BigInteger;
 import java.util.Objects;
+import lombok.Getter;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -65,7 +65,14 @@ import org.apache.tuweni.bytes.Bytes32;
 public final class ECKeyPair {
     
     private final PrivateKey privateKey;
-    private final PublicKey publicKey;
+  /**
+   * -- GETTER --
+   *  Returns the public key.
+   *
+   * @return the public key
+   */
+  @Getter
+  private final PublicKey publicKey;
     
     /**
      * Creates an ECKeyPair from a private key.
@@ -165,17 +172,8 @@ public final class ECKeyPair {
         }
         return privateKey;
     }
-    
-    /**
-     * Returns the public key.
-     * 
-     * @return the public key
-     */
-    public PublicKey getPublicKey() {
-        return publicKey;
-    }
-    
-    /**
+
+  /**
      * Checks if this key pair has access to the private key.
      * 
      * @return true if the private key is available, false if this is public-key-only

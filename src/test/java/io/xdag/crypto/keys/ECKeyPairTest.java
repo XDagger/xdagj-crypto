@@ -6,7 +6,6 @@ import io.xdag.crypto.core.CryptoProvider;
 import io.xdag.crypto.exception.CryptoException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -42,7 +41,8 @@ class ECKeyPairTest {
         assertTrue(keyPair.isPublicKeyOnly());
         
         // Should throw when trying to access private key
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> keyPair.getPrivateKey());
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+            keyPair::getPrivateKey);
         assertEquals("This is a public-key-only instance", exception.getMessage());
     }
 

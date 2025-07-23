@@ -25,6 +25,7 @@ package io.xdag.crypto.encoding;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -79,6 +80,6 @@ public class Base58Test {
     @Test
     void testIsValid() {
         assertTrue(Base58.isValid("JxF12TrwUP45BMd"));
-        assertTrue(!Base58.isValid("JxF12TrwUP45BMdO"));
+        assertFalse(Base58.isValid("JxF12TrwUP45BMdO"));
     }
 } 

@@ -75,7 +75,7 @@ class XdagSha256DigestTest {
         // Reset the digest
         digest.sha256Init();
 
-        // Second hash, should be independent of the first
+        // Second hash should be independent of the first
         Bytes expected = Bytes.wrap(Arrays.reverse(HashUtils.doubleSha256(input2).toArray()));
         byte[] actual = digest.sha256Final(input2);
 

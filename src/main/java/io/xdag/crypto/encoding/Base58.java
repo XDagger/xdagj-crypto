@@ -73,7 +73,7 @@ public final class Base58 {
             throw new IllegalArgumentException("Input cannot be null");
         }
         
-        if (input.size() == 0) {
+        if (input.isEmpty()) {
             return "";
         }
         

@@ -2,7 +2,6 @@ package io.xdag.crypto.keys;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.xdag.crypto.core.CryptoProvider;
 import io.xdag.crypto.exception.CryptoException;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeAll;
@@ -222,7 +221,7 @@ class PublicKeyTest {
     @Test
     void shouldThrowOnInvalidPoint() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> PublicKey.fromPoint(null));
-        assertTrue(exception.getCause() instanceof CryptoException);
+        assertInstanceOf(CryptoException.class, exception.getCause());
     }
 
     @Test

@@ -25,6 +25,7 @@ package io.xdag.crypto.keys;
 
 import java.math.BigInteger;
 import java.util.Objects;
+import lombok.Getter;
 import org.apache.tuweni.bytes.Bytes32;
 
 /**
@@ -44,14 +45,26 @@ import org.apache.tuweni.bytes.Bytes32;
  * 
  * @see Signer
  */
+@Getter
 public final class Signature {
-    
+
     /** The recovery ID offset used in ECDSA signatures. */
     public static final int RECOVERY_ID_OFFSET = 27;
-    
-    private final byte v;
-    private final BigInteger r;
-    private final BigInteger s;
+
+  /**
+   *  Gets the recovery ID with offset.
+   */
+  private final byte v;
+
+  /**
+   *  Gets the r component of the signature.
+   */
+  private final BigInteger r;
+
+  /**
+   *  Gets the s component of the signature.
+   */
+  private final BigInteger s;
 
     /**
      * Creates a new Signature instance.
@@ -80,16 +93,7 @@ public final class Signature {
             new BigInteger(1, s.toArrayUnsafe()));
     }
 
-    /**
-     * Gets the recovery ID with offset.
-     * 
-     * @return the v component
-     */
-    public byte getV() {
-        return v;
-    }
-
-    /**
+  /**
      * Gets the recovery ID without offset.
      * 
      * @return the recovery ID (0 or 1)
@@ -98,25 +102,7 @@ public final class Signature {
         return v - RECOVERY_ID_OFFSET;
     }
 
-    /**
-     * Gets the r component of the signature.
-     * 
-     * @return the r value
-     */
-    public BigInteger getR() {
-        return r;
-    }
-
-    /**
-     * Gets the s component of the signature.
-     * 
-     * @return the s value
-     */
-    public BigInteger getS() {
-        return s;
-    }
-
-    /**
+  /**
      * Gets the r component as a 32-byte array.
      * 
      * @return the r component as Bytes32
@@ -173,10 +159,9 @@ public final class Signature {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Signature)) return false;
-        
-        Signature other = (Signature) obj;
-        return v == other.v && 
+        if (!(obj instanceof Signature other)) return false;
+
+      return v == other.v &&
                Objects.equals(r, other.r) && 
                Objects.equals(s, other.s);
     }
