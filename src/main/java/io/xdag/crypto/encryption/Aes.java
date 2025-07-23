@@ -74,11 +74,23 @@ public final class Aes {
      * @throws CryptoException if the encryption fails or inputs are invalid.
      */
     public static Bytes encrypt(Bytes plainText, Bytes key, Bytes nonce) throws CryptoException {
+        // Validate inputs - check null first
+        if (plainText == null) {
+            throw new CryptoException("Plaintext cannot be null");
+        }
+        if (key == null) {
+            throw new CryptoException("Key cannot be null");
+        }
+        if (nonce == null) {
+            throw new CryptoException("Nonce cannot be null");
+        }
+        
+        // Validate sizes
         if (key.size() != 32) {
-            throw new IllegalArgumentException("Key must be 32 bytes for AES-256.");
+            throw new CryptoException("Key must be 32 bytes for AES-256, got: " + key.size());
         }
         if (nonce.size() != NONCE_SIZE_BYTES) {
-            throw new IllegalArgumentException("Nonce must be " + NONCE_SIZE_BYTES + " bytes for GCM.");
+            throw new CryptoException("Nonce must be " + NONCE_SIZE_BYTES + " bytes for GCM, got: " + nonce.size());
         }
 
         GCMModeCipher cipher = GCMBlockCipher.newInstance(AESEngine.newInstance());
@@ -108,31 +120,42 @@ public final class Aes {
      * @throws CryptoException if decryption fails, typically due to an invalid tag (tampering) or
      *     incorrect key/nonce.
      */
-    public static Bytes decrypt(Bytes cipherTextWithTag, Bytes key, Bytes nonce) throws CryptoException {
+    public static Bytes decrypt(Bytes cipherText, Bytes key, Bytes nonce) throws CryptoException {
+        // Validate inputs - check null first
+        if (cipherText == null) {
+            throw new CryptoException("Ciphertext cannot be null");
+        }
+        if (key == null) {
+            throw new CryptoException("Key cannot be null");
+        }
+        if (nonce == null) {
+            throw new CryptoException("Nonce cannot be null");
+        }
+        
+        // Validate sizes
         if (key.size() != 32) {
-            throw new IllegalArgumentException("Key must be 32 bytes for AES-256.");
+            throw new CryptoException("Key must be 32 bytes for AES-256, got: " + key.size());
         }
         if (nonce.size() != NONCE_SIZE_BYTES) {
-            throw new IllegalArgumentException("Nonce must be " + NONCE_SIZE_BYTES + " bytes for GCM.");
+            throw new CryptoException("Nonce must be " + NONCE_SIZE_BYTES + " bytes for GCM, got: " + nonce.size());
         }
-        if (cipherTextWithTag.size() < TAG_SIZE_BITS / 8) {
+        if (cipherText.size() < TAG_SIZE_BITS / 8) {
             throw new CryptoException("Ciphertext is too short to contain a valid authentication tag.");
         }
 
-
-        GCMModeCipher cipher = GCMBlockCipher.newInstance(AESEngine.newInstance());
-        AEADParameters params = new AEADParameters(new KeyParameter(key.toArrayUnsafe()), TAG_SIZE_BITS, nonce.toArrayUnsafe());
-        cipher.init(false, params);
-
-        byte[] output = new byte[cipher.getOutputSize(cipherTextWithTag.size())];
-        int length = cipher.processBytes(cipherTextWithTag.toArrayUnsafe(), 0, cipherTextWithTag.size(), output, 0);
-
         try {
+            GCMModeCipher cipher = GCMBlockCipher.newInstance(AESEngine.newInstance());
+            AEADParameters params = new AEADParameters(new KeyParameter(key.toArrayUnsafe()), TAG_SIZE_BITS, nonce.toArrayUnsafe());
+            cipher.init(false, params);
+
+            byte[] output = new byte[cipher.getOutputSize(cipherText.size())];
+            int length = cipher.processBytes(cipherText.toArrayUnsafe(), 0, cipherText.size(), output, 0);
+
             length += cipher.doFinal(output, length);
+
+            return Bytes.wrap(output, 0, length);
         } catch (InvalidCipherTextException e) {
             throw new CryptoException("AES-GCM decryption failed. The data may be tampered or the key/nonce is incorrect.", e);
         }
-
-        return Bytes.wrap(output, 0, length);
     }
 }

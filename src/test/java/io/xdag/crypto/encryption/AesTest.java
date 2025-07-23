@@ -25,20 +25,21 @@ package io.xdag.crypto.encryption;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.xdag.crypto.core.CryptoProvider;
 import io.xdag.crypto.exception.CryptoException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
-class AesTest {
+public class AesTest {
 
-
+    private static final int NONCE_SIZE = 12; // 12 bytes for GCM
 
     @Test
     void shouldEncryptAndDecryptSuccessfully() throws CryptoException {
-        Bytes plaintext = Bytes.wrap("Hello, World!".getBytes());
+        Bytes plaintext = Bytes.wrap("Hello, XDAG!".getBytes());
         Bytes32 key = Bytes32.random();
-        Bytes32 nonce = Bytes32.random();
+        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE)); // 12 bytes for GCM
 
         Bytes ciphertext = Aes.encrypt(plaintext, key, nonce);
         assertNotNull(ciphertext);
@@ -49,10 +50,25 @@ class AesTest {
     }
 
     @Test
+    void shouldEncryptAndDecryptEmptyData() throws CryptoException {
+        Bytes plaintext = Bytes.EMPTY;
+        Bytes32 key = Bytes32.random();
+        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+
+        Bytes ciphertext = Aes.encrypt(plaintext, key, nonce);
+        assertNotNull(ciphertext);
+        // Ciphertext should contain at least the authentication tag (16 bytes)
+        assertTrue(ciphertext.size() >= 16);
+
+        Bytes decrypted = Aes.decrypt(ciphertext, key, nonce);
+        assertEquals(plaintext, decrypted);
+    }
+
+    @Test
     void shouldEncryptAndDecryptLongerData() throws CryptoException {
         Bytes plaintext = Bytes.wrap("This is a longer message that should be encrypted and decrypted correctly.".getBytes());
         Bytes32 key = Bytes32.random();
-        Bytes32 nonce = Bytes32.random();
+        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE)); // 12 bytes for GCM
 
         Bytes ciphertext = Aes.encrypt(plaintext, key, nonce);
         assertNotNull(ciphertext);
@@ -65,19 +81,19 @@ class AesTest {
     @Test
     void shouldThrowOnNullPlaintext() {
         Bytes32 key = Bytes32.random();
-        Bytes32 nonce = Bytes32.random();
+        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.encrypt(null, key, nonce));
-        assertTrue(exception.getMessage().contains("plaintext"));
+        assertTrue(exception.getMessage().contains("Plaintext cannot be null"));
     }
 
     @Test
     void shouldThrowOnNullKey() {
         Bytes plaintext = Bytes.wrap("test".getBytes());
-        Bytes32 nonce = Bytes32.random();
+        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.encrypt(plaintext, null, nonce));
-        assertTrue(exception.getMessage().contains("key"));
+        assertTrue(exception.getMessage().contains("Key cannot be null"));
     }
 
     @Test
@@ -86,33 +102,53 @@ class AesTest {
         Bytes32 key = Bytes32.random();
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.encrypt(plaintext, key, null));
-        assertTrue(exception.getMessage().contains("nonce"));
+        assertTrue(exception.getMessage().contains("Nonce cannot be null"));
     }
 
     @Test
     void shouldThrowOnDecryptWithNullCiphertext() {
         Bytes32 key = Bytes32.random();
-        Bytes32 nonce = Bytes32.random();
+        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.decrypt(null, key, nonce));
-        assertTrue(exception.getMessage().contains("ciphertext"));
+        assertTrue(exception.getMessage().contains("Ciphertext cannot be null"));
     }
 
     @Test
     void shouldThrowOnDecryptWithNullKey() {
-        Bytes ciphertext = Bytes.wrap("test".getBytes());
-        Bytes32 nonce = Bytes32.random();
+        Bytes ciphertext = Bytes.wrap(new byte[32]); // Dummy ciphertext
+        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.decrypt(ciphertext, null, nonce));
-        assertTrue(exception.getMessage().contains("key"));
+        assertTrue(exception.getMessage().contains("Key cannot be null"));
     }
 
     @Test
     void shouldThrowOnDecryptWithNullNonce() {
-        Bytes ciphertext = Bytes.wrap("test".getBytes());
+        Bytes ciphertext = Bytes.wrap(new byte[32]); // Dummy ciphertext
         Bytes32 key = Bytes32.random();
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.decrypt(ciphertext, key, null));
-        assertTrue(exception.getMessage().contains("nonce"));
+        assertTrue(exception.getMessage().contains("Nonce cannot be null"));
+    }
+
+    @Test
+    void shouldThrowOnInvalidKeySize() {
+        Bytes plaintext = Bytes.wrap("test".getBytes());
+        Bytes shortKey = Bytes.wrap(new byte[16]); // Wrong size (16 bytes instead of 32)
+        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+
+        CryptoException exception = assertThrows(CryptoException.class, () -> Aes.encrypt(plaintext, shortKey, nonce));
+        assertTrue(exception.getMessage().contains("Key must be 32 bytes"));
+    }
+
+    @Test
+    void shouldThrowOnInvalidNonceSize() {
+        Bytes plaintext = Bytes.wrap("test".getBytes());
+        Bytes32 key = Bytes32.random();
+        Bytes wrongNonce = Bytes.wrap(new byte[16]); // Wrong size (16 bytes instead of 12)
+
+        CryptoException exception = assertThrows(CryptoException.class, () -> Aes.encrypt(plaintext, key, wrongNonce));
+        assertTrue(exception.getMessage().contains("Nonce must be 12 bytes"));
     }
 } 
