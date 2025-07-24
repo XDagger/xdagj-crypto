@@ -169,7 +169,7 @@ public final class CryptoProvider {
      * @return a byte array containing the random bytes
      * @throws IllegalArgumentException if numBytes is negative
      */
-    public static byte[] getRandomBytes(int numBytes) {
+    public static byte[] nextBytes(int numBytes) {
         if (numBytes < 0) {
             throw new IllegalArgumentException("Number of bytes must be non-negative.");
         }
@@ -183,8 +183,19 @@ public final class CryptoProvider {
      * 
      * @return a random integer
      */
-    public static int getRandomInt() {
+    public static int nextInt() {
         return getSecureRandom().nextInt();
+    }
+
+    /**
+     * Generate a cryptographically secure random integer within a range.
+     *
+     * @param min the minimum value (inclusive)
+     * @param max the maximum value (exclusive)
+     * @return a random integer between min (inclusive) and max (exclusive)
+     */
+    public static int nextInt(int min, int max) {
+        return getSecureRandom().nextInt(min, max);
     }
     
     /**
@@ -192,8 +203,19 @@ public final class CryptoProvider {
      * 
      * @return a random long
      */
-    public static long getRandomLong() {
+    public static long nextLong() {
         return getSecureRandom().nextLong();
+    }
+
+    /**
+     * Generate a cryptographically secure random long within a range.
+     *
+     * @param lower the minimum value (inclusive)
+     * @param upper the maximum value (exclusive)
+     * @return a random long between lower (inclusive) and upper (exclusive)
+     */
+    public static long nextLong(long lower, long upper) {
+        return getSecureRandom().nextLong(lower, upper);
     }
 
     /**

@@ -46,8 +46,8 @@ public class CryptoProviderRandomTest {
 
     @Test
     void testGetRandomBytes() {
-        byte[] bytes1 = CryptoProvider.getRandomBytes(32);
-        byte[] bytes2 = CryptoProvider.getRandomBytes(32);
+        byte[] bytes1 = CryptoProvider.nextBytes(32);
+        byte[] bytes2 = CryptoProvider.nextBytes(32);
         assertEquals(32, bytes1.length);
         assertNotNull(bytes1);
         assertNotNull(bytes2);
@@ -57,9 +57,9 @@ public class CryptoProviderRandomTest {
 
     @Test
     void testGetRandomBytesEdgeCases() {
-        assertThrows(IllegalArgumentException.class, () -> CryptoProvider.getRandomBytes(-1));
+        assertThrows(IllegalArgumentException.class, () -> CryptoProvider.nextBytes(-1));
 
-        byte[] zeroBytes = CryptoProvider.getRandomBytes(0);
+        byte[] zeroBytes = CryptoProvider.nextBytes(0);
         assertEquals(0, zeroBytes.length);
     }
 
@@ -75,17 +75,17 @@ public class CryptoProviderRandomTest {
     }
 
     @Test
-    void testGetRandomInt() {
-        int int1 = CryptoProvider.getRandomInt();
-        int int2 = CryptoProvider.getRandomInt();
+    void testNextInt() {
+        int int1 = CryptoProvider.nextInt();
+        int int2 = CryptoProvider.nextInt();
         // Should generate different random integers (probability of collision is very low)
         assertNotEquals(int1, int2);
     }
 
     @Test
-    void testGetRandomLong() {
-        long long1 = CryptoProvider.getRandomLong();
-        long long2 = CryptoProvider.getRandomLong();
+    void testNextLong() {
+        long long1 = CryptoProvider.nextLong();
+        long long2 = CryptoProvider.nextLong();
         // Should generate different random longs (probability of collision is negligible)
         assertNotEquals(long1, long2);
     }
@@ -104,7 +104,7 @@ public class CryptoProviderRandomTest {
                 try {
                     for (int j = 0; j < numIterations; j++) {
                         instances.add(CryptoProvider.getSecureRandom());
-                        CryptoProvider.getRandomBytes(16); // Test concurrent access
+                        CryptoProvider.nextBytes(16); // Test concurrent access
                     }
                 } finally {
                     latch.countDown();
@@ -150,15 +150,15 @@ public class CryptoProviderRandomTest {
                         assertNotNull(sr, "SecureRandom should never be null");
                         
                         // Test concurrent random byte generation
-                        byte[] randomBytes = CryptoProvider.getRandomBytes(8);
+                        byte[] randomBytes = CryptoProvider.nextBytes(8);
                         assertEquals(8, randomBytes.length);
                         
                         // Add to set to verify uniqueness (probability of collision is negligible)
                         generatedBytes.add(randomBytes);
                         
                         // Test other random generation methods
-                        CryptoProvider.getRandomInt();
-                        CryptoProvider.getRandomLong();
+                        CryptoProvider.nextInt();
+                        CryptoProvider.nextLong();
                     }
                 } finally {
                     latch.countDown();

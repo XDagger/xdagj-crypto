@@ -85,4 +85,82 @@ class Bip44WalletTest {
         assertNotNull(extractedKeyPair.getPrivateKey());
         assertTrue(extractedKeyPair.hasPrivateKey());
     }
+
+    @Test
+    void shouldCreateKeyPairFromSeed() throws CryptoException {
+        // Test data from BIP39 test vectors
+        String mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+        Bytes seed = Bip39Mnemonic.toSeed(mnemonic);
+        
+        // Test createKeyPair convenience method
+        ECKeyPair keyPair = Bip44Wallet.createKeyPair(seed.toArrayUnsafe());
+        assertNotNull(keyPair);
+        assertNotNull(keyPair.getPrivateKey());
+        assertNotNull(keyPair.getPublicKey());
+        
+        // Should be deterministic
+        ECKeyPair keyPair2 = Bip44Wallet.createKeyPair(seed.toArrayUnsafe());
+        assertEquals(keyPair.getPrivateKey().toBigInteger(), keyPair2.getPrivateKey().toBigInteger());
+        assertEquals(keyPair.getPublicKey().toCompressedBytes(), keyPair2.getPublicKey().toCompressedBytes());
+    }
+
+    @Test
+    void shouldCreateKeyPairFromMnemonic() throws CryptoException {
+        String mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+        
+        // Test createKeyPairFromMnemonic convenience method
+        ECKeyPair keyPair = Bip44Wallet.createKeyPairFromMnemonic(mnemonic);
+        assertNotNull(keyPair);
+        assertNotNull(keyPair.getPrivateKey());
+        assertNotNull(keyPair.getPublicKey());
+        
+        // Should be deterministic
+        ECKeyPair keyPair2 = Bip44Wallet.createKeyPairFromMnemonic(mnemonic);
+        assertEquals(keyPair.getPrivateKey().toBigInteger(), keyPair2.getPrivateKey().toBigInteger());
+        assertEquals(keyPair.getPublicKey().toCompressedBytes(), keyPair2.getPublicKey().toCompressedBytes());
+        
+        // Should be equivalent to manual seed conversion
+        Bytes seed = Bip39Mnemonic.toSeed(mnemonic);
+        ECKeyPair keyPairFromSeed = Bip44Wallet.createKeyPair(seed.toArrayUnsafe());
+        assertEquals(keyPair.getPrivateKey().toBigInteger(), keyPairFromSeed.getPrivateKey().toBigInteger());
+    }
+
+    @Test
+    void shouldCreateKeyPairFromMnemonicWithPassphrase() throws CryptoException {
+        String mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+        String passphrase = "test_passphrase";
+        
+        // Test createKeyPairFromMnemonic with passphrase
+        ECKeyPair keyPairWithPassphrase = Bip44Wallet.createKeyPairFromMnemonic(mnemonic, passphrase);
+        ECKeyPair keyPairWithoutPassphrase = Bip44Wallet.createKeyPairFromMnemonic(mnemonic);
+        
+        assertNotNull(keyPairWithPassphrase);
+        assertNotNull(keyPairWithoutPassphrase);
+        
+        // Should be different with and without passphrase
+        assertTrue(!keyPairWithPassphrase.getPrivateKey().toBigInteger()
+                .equals(keyPairWithoutPassphrase.getPrivateKey().toBigInteger()));
+        
+        // Should be deterministic with same passphrase
+        ECKeyPair keyPairWithPassphrase2 = Bip44Wallet.createKeyPairFromMnemonic(mnemonic, passphrase);
+        assertEquals(keyPairWithPassphrase.getPrivateKey().toBigInteger(), 
+                keyPairWithPassphrase2.getPrivateKey().toBigInteger());
+    }
+
+    @Test
+    void shouldCreateKeyPairCompatibleWithFullBip32Key() throws CryptoException {
+        String mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+        Bytes seed = Bip39Mnemonic.toSeed(mnemonic);
+        
+        // Compare convenience method with full BIP32 approach
+        ECKeyPair simpleKeyPair = Bip44Wallet.createKeyPair(seed.toArrayUnsafe());
+        Bip32Key masterKey = Bip44Wallet.createMasterKey(seed.toArrayUnsafe());
+        ECKeyPair masterKeyPair = masterKey.keyPair();
+        
+        // Should produce the same key pair
+        assertEquals(simpleKeyPair.getPrivateKey().toBigInteger(), 
+                masterKeyPair.getPrivateKey().toBigInteger());
+        assertEquals(simpleKeyPair.getPublicKey().toCompressedBytes(), 
+                masterKeyPair.getPublicKey().toCompressedBytes());
+    }
 } 

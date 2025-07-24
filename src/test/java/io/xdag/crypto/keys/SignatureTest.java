@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.xdag.crypto.core.CryptoProvider;
 import io.xdag.crypto.exception.CryptoException;
 import java.math.BigInteger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +38,7 @@ import org.junit.jupiter.api.Test;
  * Comprehensive tests for Signature class functionality.
  * 
  * <p>This test class covers Signature creation, validation, format conversion,
- * and verification to ensure complete test coverage.
+ * encoding/decoding, and verification to ensure complete test coverage.
  */
 class SignatureTest {
 
@@ -57,17 +58,43 @@ class SignatureTest {
 
     @Test
     void shouldReturnValidComponentRanges() {
-        assertTrue(testSignature.getV() >= (byte) 27);
-        assertTrue(testSignature.getV() <= (byte) 30);
+        assertTrue(testSignature.getRecId() >= 0);
+        assertTrue(testSignature.getRecId() <= 1);
         assertTrue(testSignature.getR().signum() > 0);
         assertTrue(testSignature.getS().signum() > 0);
-        assertTrue(testSignature.getRecoveryId() >= 0 && testSignature.getRecoveryId() <= 3);
     }
 
     @Test
-    void shouldCreateSignatureCorrectly() {
-        assertTrue(testSignature.isCanonical());
-        assertTrue(testSignature.getS().compareTo(CryptoProvider.getCurve().getN().divide(BigInteger.valueOf(2))) <= 0);
+    void shouldCreateSignatureWithCreateMethod() {
+        BigInteger r = BigInteger.valueOf(123);
+        BigInteger s = BigInteger.valueOf(456);
+        byte recId = 0;
+        
+        Signature signature = Signature.create(r, s, recId);
+        
+        assertEquals(r, signature.getR());
+        assertEquals(s, signature.getS());
+        assertEquals(recId, signature.getRecId());
+    }
+
+    @Test
+    void shouldThrowOnInvalidRecId() {
+        BigInteger r = BigInteger.valueOf(123);
+        BigInteger s = BigInteger.valueOf(456);
+        byte invalidRecId = 2;
+        
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> Signature.create(r, s, invalidRecId));
+        assertTrue(exception.getMessage().contains("Invalid 'recId' value"));
+    }
+
+    @Test
+    void shouldThrowOnNullComponents() {
+        BigInteger r = BigInteger.valueOf(123);
+        BigInteger s = BigInteger.valueOf(456);
+        
+        assertThrows(NullPointerException.class, () -> Signature.create(null, s, (byte) 0));
+        assertThrows(NullPointerException.class, () -> Signature.create(r, null, (byte) 0));
     }
 
     @Test
@@ -76,61 +103,68 @@ class SignatureTest {
     }
 
     @Test
-    void shouldCreateSignatureWithCorrectRecoveryId() {
-        assertTrue(testSignature.getRecoveryId() >= 0);
-        assertTrue(testSignature.getRecoveryId() <= 3);
+    void shouldEncodeAndDecodeCorrectly() {
+        Bytes encoded = testSignature.encodedBytes();
+        assertEquals(65, encoded.size());
+        
+        Signature decoded = Signature.decode(encoded);
+        assertEquals(testSignature, decoded);
     }
 
     @Test
-    void shouldReturnCorrectRecoveryId() {
-        byte[] validVValues = {27, 28, 29, 30}; // Standard recovery ID values
+    void shouldDecodeFromByteArray() {
+        Bytes encoded = testSignature.encodedBytes();
+        byte[] encodedArray = encoded.toArrayUnsafe();
         
-        for (byte v : validVValues) {
-            BigInteger r = BigInteger.valueOf(12345);
-            BigInteger s = BigInteger.valueOf(67890);
-            Signature signature = new Signature(v, r, s);
-            
-            assertEquals(v - Signature.RECOVERY_ID_OFFSET, signature.getRecoveryId());
-        }
+        Signature decoded = Signature.decode(encodedArray);
+        assertEquals(testSignature, decoded);
     }
 
     @Test
-    void shouldGenerateValidDerEncoding() {
-        byte[] derBytes = testSignature.toDER();
-        assertNotNull(derBytes);
-        assertTrue(derBytes.length > 0);
+    void shouldThrowOnInvalidEncodedLength() {
+        byte[] invalidLength = new byte[64]; // Should be 65
+        
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> Signature.decode(invalidLength));
+        assertTrue(exception.getMessage().contains("must be 65 bytes long"));
     }
 
     @Test
-    void shouldCreateWithStaticOfMethod() {
-        // Create test Bytes32 values for r and s components
-        byte[] rArray = new byte[32];
-        byte[] sArray = new byte[32];
-        rArray[31] = 1; // Set last byte to create valid r
-        sArray[31] = 2; // Set last byte to create valid s
+    void shouldCacheEncodedBytes() {
+        Bytes encoded1 = testSignature.encodedBytes();
+        Bytes encoded2 = testSignature.encodedBytes();
         
-        Bytes32 rBytes = Bytes32.wrap(rArray);
-        Bytes32 sBytes = Bytes32.wrap(sArray);
-        byte v = 27;
-        
-        Signature created = Signature.of(v, rBytes, sBytes);
-        
-        assertNotNull(created);
-        assertEquals(v, created.getV());
-        assertEquals(new BigInteger(1, rArray), created.getR());
-        assertEquals(new BigInteger(1, sArray), created.getS());
+        assertSame(encoded1, encoded2); // Should return same instance due to caching
     }
+
+    @Test
+    void shouldReturnCorrectByteRepresentations() {
+        Bytes32 rBytes = testSignature.getRBytes();
+        Bytes32 sBytes = testSignature.getSBytes();
+        
+        assertEquals(32, rBytes.size());
+        assertEquals(32, sBytes.size());
+        
+        // Verify round-trip
+        assertEquals(testSignature.getR(), new BigInteger(1, rBytes.toArrayUnsafe()));
+        assertEquals(testSignature.getS(), new BigInteger(1, sBytes.toArrayUnsafe()));
+    }
+
+
 
     @Test
     void shouldHandleEqualsCorrectly() {
-        // Create identical signature
-        Signature sameSignature = new Signature(testSignature.getV(), testSignature.getR(), testSignature.getS());
+        BigInteger r = testSignature.getR();
+        BigInteger s = testSignature.getS();
+        byte recId = testSignature.getRecId();
+        
+        Signature sameSignature = Signature.create(r, s, recId);
         
         assertEquals(testSignature, testSignature);
         assertEquals(sameSignature, testSignature);
         
-        // Create different signature
-        Signature differentSignature = new Signature((byte) 27, BigInteger.valueOf(1), BigInteger.valueOf(2));
+        // Test different signatures
+        Signature differentSignature = Signature.create(BigInteger.valueOf(1), BigInteger.valueOf(2), (byte) 0);
         assertNotEquals(differentSignature, testSignature);
         assertNotEquals(null, testSignature);
         assertNotEquals("not a signature", testSignature);
@@ -138,7 +172,11 @@ class SignatureTest {
 
     @Test
     void shouldReturnConsistentHashCode() {
-        Signature sameSignature = new Signature(testSignature.getV(), testSignature.getR(), testSignature.getS());
+        BigInteger r = testSignature.getR();
+        BigInteger s = testSignature.getS();
+        byte recId = testSignature.getRecId();
+        
+        Signature sameSignature = Signature.create(r, s, recId);
         assertEquals(sameSignature.hashCode(), testSignature.hashCode());
     }
 
@@ -146,14 +184,13 @@ class SignatureTest {
     void shouldReturnMeaningfulToString() {
         String toString = testSignature.toString();
         assertTrue(toString.contains("Signature{"));
-        assertTrue(toString.contains("v="));
         assertTrue(toString.contains("r="));
         assertTrue(toString.contains("s="));
+        assertTrue(toString.contains("recId="));
     }
 
     @Test
     void shouldValidateSignatureProperties() throws CryptoException {
-        // Test that signature was created correctly
         assertNotNull(testSignature);
         assertTrue(testSignature.isCanonical());
         
@@ -171,5 +208,36 @@ class SignatureTest {
         // Test with wrong message
         Bytes32 wrongMessageHash = Bytes32.fromHexString("0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890");
         assertFalse(Signer.verify(wrongMessageHash, testSignature, testKeyPair.getPublicKey()));
+    }
+
+    @Test
+    void shouldRoundTripThroughAllFormats() {
+        // Test encode/decode round-trip
+        Bytes encoded = testSignature.encodedBytes();
+        Signature decoded = Signature.decode(encoded);
+        assertEquals(testSignature, decoded);
+        
+        // Test that decoded signature also encodes correctly
+        Bytes reencoded = decoded.encodedBytes();
+        assertEquals(encoded, reencoded);
+    }
+
+    @Test
+    void shouldBeCompatibleWithBesuFormat() {
+        // Test that our 65-byte format matches expected structure
+        Bytes encoded = testSignature.encodedBytes();
+        assertEquals(65, encoded.size());
+        
+        // First 32 bytes should be r
+        BigInteger r = encoded.slice(0, 32).toUnsignedBigInteger();
+        assertEquals(testSignature.getR(), r);
+        
+        // Next 32 bytes should be s  
+        BigInteger s = encoded.slice(32, 32).toUnsignedBigInteger();
+        assertEquals(testSignature.getS(), s);
+        
+        // Last byte should be recId
+        byte recId = encoded.get(64);
+        assertEquals(testSignature.getRecId(), recId);
     }
 } 

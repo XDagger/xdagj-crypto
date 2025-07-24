@@ -368,4 +368,77 @@ class PublicKeyTest {
         PublicKey fromBigInt = PublicKey.fromBigInteger(bigInt);
         assertEquals(fromCoords, fromBigInt);
     }
+
+    @Test
+    void shouldCreateFromXCoordinateAndYBit() throws CryptoException {
+        // Get x coordinate and determine y-bit from test key
+        BigInteger x = testPublicKey.getXCoordinate();
+        BigInteger y = testPublicKey.getYCoordinate();
+        boolean yBit = y.testBit(0); // Check if y is odd
+        
+        // Test BigInteger version
+        PublicKey fromXBigInt = PublicKey.fromXCoordinate(x, yBit);
+        assertEquals(testPublicKey, fromXBigInt);
+        
+        // Test Bytes version
+        byte[] xBytes = x.toByteArray();
+        Bytes xCoordBytes;
+        if (xBytes.length == 32) {
+            xCoordBytes = Bytes.wrap(xBytes);
+        } else if (xBytes.length == 33 && xBytes[0] == 0) {
+            // Remove leading zero
+            xCoordBytes = Bytes.wrap(xBytes, 1, 32);
+        } else if (xBytes.length < 32) {
+            // Pad with leading zeros
+            byte[] padded = new byte[32];
+            System.arraycopy(xBytes, 0, padded, 32 - xBytes.length, xBytes.length);
+            xCoordBytes = Bytes.wrap(padded);
+        } else {
+            throw new RuntimeException("X coordinate too large");
+        }
+        
+        PublicKey fromXBytes = PublicKey.fromXCoordinate(xCoordBytes, yBit);
+        assertEquals(testPublicKey, fromXBytes);
+    }
+
+    @Test
+    void shouldRejectInvalidXCoordinateForXDAG() {
+        // Test null Bytes
+        CryptoException exception1 = assertThrows(CryptoException.class, 
+            () -> PublicKey.fromXCoordinate((Bytes) null, true));
+        assertEquals("X coordinate cannot be null", exception1.getMessage());
+        
+        // Test null BigInteger
+        CryptoException exception2 = assertThrows(CryptoException.class, 
+            () -> PublicKey.fromXCoordinate((BigInteger) null, false));
+        assertEquals("X coordinate cannot be null", exception2.getMessage());
+        
+        // Test wrong size Bytes
+        Bytes wrongSize = Bytes.of(new byte[31]); // Should be 32 bytes
+        CryptoException exception3 = assertThrows(CryptoException.class, 
+            () -> PublicKey.fromXCoordinate(wrongSize, true));
+        assertEquals("X coordinate must be exactly 32 bytes, got 31", exception3.getMessage());
+    }
+
+    @Test
+    void shouldHandleXCoordinateEdgeCases() throws CryptoException {
+        // Test with a known valid x coordinate (from secp256k1 generator point)
+        BigInteger genX = new BigInteger("55066263022277343669578718895168534326250603453777594175500187360389116729240");
+        boolean genYBit = false; // Generator point has even y
+        
+        PublicKey genKey = PublicKey.fromXCoordinate(genX, genYBit);
+        assertNotNull(genKey);
+        assertEquals(genX, genKey.getXCoordinate());
+        
+        // Test round-trip
+        BigInteger roundTripX = genKey.getXCoordinate();
+        BigInteger roundTripY = genKey.getYCoordinate();
+        boolean roundTripYBit = roundTripY.testBit(0);
+        
+        assertEquals(genX, roundTripX);
+        assertEquals(genYBit, roundTripYBit);
+        
+        PublicKey roundTripKey = PublicKey.fromXCoordinate(roundTripX, roundTripYBit);
+        assertEquals(genKey, roundTripKey);
+    }
 } 

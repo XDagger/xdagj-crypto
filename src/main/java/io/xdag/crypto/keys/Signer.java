@@ -164,7 +164,7 @@ public final class Signer {
      */
     public static PublicKey recoverPublicKey(Bytes32 messageHash, Signature signature) throws CryptoException {
         ECPoint point = recoverPublicKeyPoint(
-            signature.getRecoveryId(),
+            signature.getRecId(),
             signature.getR(),
             signature.getS(),
             messageHash);
@@ -219,8 +219,8 @@ public final class Signer {
             throw new RuntimeException("Could not construct a recoverable signature");
         }
 
-        byte v = (byte) (recoveryId + Signature.RECOVERY_ID_OFFSET);
-        return new Signature(v, r, s);
+        byte recId = (byte) recoveryId;
+        return Signature.create(r, s, recId);
     }
 
     /**
