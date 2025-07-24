@@ -53,6 +53,34 @@ import org.bouncycastle.crypto.params.KeyParameter;
  * {@code m / 44' / 586' / account' / 0 / address_index}
  * where 586 is XDAG's registered coin type.
  * 
+ * <h3>Usage Examples</h3>
+ * 
+ * <p><strong>Simple Key Pair Generation (Recommended for basic use cases):</strong>
+ * <pre>{@code
+ * // From mnemonic phrase
+ * String mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+ * ECKeyPair keyPair = Bip44Wallet.createKeyPairFromMnemonic(mnemonic);
+ * 
+ * // Use the key pair for signing, verification, etc.
+ * byte[] message = "Hello XDAG".getBytes();
+ * Signature signature = Signer.signMessage(keyPair, message);
+ * }</pre>
+ * 
+ * <p><strong>Full HD Wallet with Key Derivation (For advanced wallet features):</strong>
+ * <pre>{@code
+ * // Create master key
+ * byte[] seed = Bip39Mnemonic.toSeed(mnemonic).toArrayUnsafe();
+ * Bip32Key masterKey = Bip44Wallet.createMasterKey(seed);
+ * 
+ * // Derive account-specific keys
+ * Bip32Key accountKey = Bip44Wallet.deriveXdagKey(masterKey, 0, 0); // First account, first address
+ * Bip32Key accountKey2 = Bip44Wallet.deriveXdagKey(masterKey, 0, 1); // First account, second address
+ * 
+ * // Extract key pairs for use
+ * ECKeyPair keyPair1 = accountKey.keyPair();
+ * ECKeyPair keyPair2 = accountKey2.keyPair();
+ * }</pre>
+ * 
  * <p><strong>Security Note:</strong> Seeds and private keys are handled securely with
  * constant-time operations where possible to prevent timing attacks.
  * 
@@ -121,6 +149,69 @@ public final class Bip44Wallet {
         } catch (Exception e) {
             throw new CryptoException("Failed to create master key", e);
         }
+    }
+
+    /**
+     * Creates a simple key pair from a seed without BIP32 hierarchy information.
+     * 
+     * <p>This is a convenience method for users who just need a cryptographic key pair
+     * without the complexity of hierarchical deterministic wallet features. If you need
+     * HD wallet functionality (key derivation, account management), use {@link #createMasterKey(byte[])} instead.
+     * 
+     * <p>The generated key pair can be used for signing, verification, and basic cryptographic operations.
+     * 
+     * @param seed the cryptographic seed (typically 64 bytes from BIP39)
+     * @return an ECKeyPair for direct cryptographic operations
+     * @throws CryptoException if key generation fails
+     */
+    public static ECKeyPair createKeyPair(byte[] seed) throws CryptoException {
+        return createMasterKey(seed).keyPair();
+    }
+
+    /**
+     * Creates a simple key pair from a BIP39 mnemonic phrase.
+     * 
+     * <p>This convenience method combines mnemonic processing with key pair generation
+     * for users who want a straightforward path from mnemonic to usable keys.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * String mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+     * ECKeyPair keyPair = Bip44Wallet.createKeyPairFromMnemonic(mnemonic);
+     * // Use keyPair for signing, etc.
+     * }</pre>
+     * 
+     * @param mnemonic the BIP39 mnemonic phrase
+     * @return an ECKeyPair for direct cryptographic operations
+     * @throws CryptoException if mnemonic is invalid or key generation fails
+     */
+    public static ECKeyPair createKeyPairFromMnemonic(String mnemonic) throws CryptoException {
+        if (mnemonic == null || mnemonic.trim().isEmpty()) {
+            throw new CryptoException("Mnemonic cannot be null or empty");
+        }
+        
+        Bytes seed = Bip39Mnemonic.toSeed(mnemonic);
+        return createKeyPair(seed.toArrayUnsafe());
+    }
+
+    /**
+     * Creates a simple key pair from a BIP39 mnemonic phrase with passphrase.
+     * 
+     * <p>This method provides an additional layer of security by using a passphrase
+     * in addition to the mnemonic phrase for seed generation.
+     * 
+     * @param mnemonic the BIP39 mnemonic phrase
+     * @param passphrase the additional passphrase for enhanced security
+     * @return an ECKeyPair for direct cryptographic operations
+     * @throws CryptoException if mnemonic is invalid or key generation fails
+     */
+    public static ECKeyPair createKeyPairFromMnemonic(String mnemonic, String passphrase) throws CryptoException {
+        if (mnemonic == null || mnemonic.trim().isEmpty()) {
+            throw new CryptoException("Mnemonic cannot be null or empty");
+        }
+        
+        Bytes seed = Bip39Mnemonic.toSeed(mnemonic, passphrase);
+        return createKeyPair(seed.toArrayUnsafe());
     }
 
     /**

@@ -159,7 +159,7 @@ public final class Bip39Mnemonic {
      * @throws CryptoException if generation fails
      */
     private static List<String> generateMnemonic() throws CryptoException {
-        byte[] entropy = CryptoProvider.getRandomBytes(16); // 128 bits = 16 bytes
+        byte[] entropy = CryptoProvider.nextBytes(16); // 128 bits = 16 bytes
         return generateMnemonic(Bytes.wrap(entropy));
     }
     

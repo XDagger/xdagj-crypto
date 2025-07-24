@@ -54,14 +54,14 @@ public class Base58Test {
 
     @Test
     void testEncodeDecodeCheck() throws AddressFormatException {
-        byte[] testBytes = CryptoProvider.getRandomBytes(20); // Example payload
+        byte[] testBytes = CryptoProvider.nextBytes(20); // Example payload
         String encoded = Base58.encodeCheck(testBytes);
         assertArrayEquals(testBytes, Base58.decodeCheckToArray(encoded));
     }
 
     @Test
     void testEncodeDecodeCheckBytes() throws AddressFormatException {
-        Bytes testBytes = Bytes.wrap(CryptoProvider.getRandomBytes(20));
+        Bytes testBytes = Bytes.wrap(CryptoProvider.nextBytes(20));
         String encoded = Base58.encodeCheck(testBytes);
         assertEquals(testBytes, Base58.decodeCheck(encoded));
     }

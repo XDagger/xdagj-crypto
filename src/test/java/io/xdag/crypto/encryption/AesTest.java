@@ -39,7 +39,7 @@ public class AesTest {
     void shouldEncryptAndDecryptWithAes256() throws CryptoException {
         Bytes plaintext = Bytes.wrap("Hello, XDAG!".getBytes());
         Bytes32 key = Bytes32.random(); // 32 bytes - AES-256
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         Bytes ciphertext = Aes.encrypt(plaintext, key, nonce);
         assertNotNull(ciphertext);
@@ -52,8 +52,8 @@ public class AesTest {
     @Test
     void shouldEncryptAndDecryptWithAes192() throws CryptoException {
         Bytes plaintext = Bytes.wrap("Hello, XDAG with AES-192!".getBytes());
-        Bytes key = Bytes.wrap(CryptoProvider.getRandomBytes(24)); // 24 bytes - AES-192
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes key = Bytes.wrap(CryptoProvider.nextBytes(24)); // 24 bytes - AES-192
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         Bytes ciphertext = Aes.encrypt(plaintext, key, nonce);
         assertNotNull(ciphertext);
@@ -66,8 +66,8 @@ public class AesTest {
     @Test
     void shouldEncryptAndDecryptWithAes128() throws CryptoException {
         Bytes plaintext = Bytes.wrap("Hello, XDAG with AES-128!".getBytes());
-        Bytes key = Bytes.wrap(CryptoProvider.getRandomBytes(16)); // 16 bytes - AES-128
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes key = Bytes.wrap(CryptoProvider.nextBytes(16)); // 16 bytes - AES-128
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         Bytes ciphertext = Aes.encrypt(plaintext, key, nonce);
         assertNotNull(ciphertext);
@@ -81,8 +81,8 @@ public class AesTest {
     void shouldWorkWithXdagProjectKeySize() throws CryptoException {
         // Test specifically for xdagj compatibility - 24 byte key
         Bytes plaintext = Bytes.wrap("XDAG wallet data".getBytes());
-        Bytes key = Bytes.wrap(CryptoProvider.getRandomBytes(24)); // 24 bytes like xdagj uses
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes key = Bytes.wrap(CryptoProvider.nextBytes(24)); // 24 bytes like xdagj uses
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         Bytes ciphertext = Aes.encrypt(plaintext, key, nonce);
         assertNotNull(ciphertext);
@@ -95,8 +95,8 @@ public class AesTest {
     void shouldSupportLegacy16ByteNonce() throws CryptoException {
         // Test for xdagj compatibility - 16 byte nonce (legacy)
         Bytes plaintext = Bytes.wrap("Legacy nonce test".getBytes());
-        Bytes key = Bytes.wrap(CryptoProvider.getRandomBytes(24)); // AES-192
-        Bytes legacyNonce = Bytes.wrap(CryptoProvider.getRandomBytes(16)); // 16 bytes like xdagj uses
+        Bytes key = Bytes.wrap(CryptoProvider.nextBytes(24)); // AES-192
+        Bytes legacyNonce = Bytes.wrap(CryptoProvider.nextBytes(16)); // 16 bytes like xdagj uses
 
         Bytes ciphertext = Aes.encrypt(plaintext, key, legacyNonce);
         assertNotNull(ciphertext);
@@ -109,8 +109,8 @@ public class AesTest {
     void shouldSupportXdagWalletCompatibility() throws CryptoException {
         // Test exact xdagj Wallet scenario: 24-byte key + 16-byte IV
         Bytes plaintext = Bytes.wrap("Private key data for wallet".getBytes());
-        Bytes key = Bytes.wrap(CryptoProvider.getRandomBytes(24)); // BCrypt key length
-        Bytes iv = Bytes.wrap(CryptoProvider.getRandomBytes(16)); // SecureRandomProvider IV
+        Bytes key = Bytes.wrap(CryptoProvider.nextBytes(24)); // BCrypt key length
+        Bytes iv = Bytes.wrap(CryptoProvider.nextBytes(16)); // SecureRandomProvider IV
 
         // This should work without throwing exceptions
         Bytes ciphertext = Aes.encrypt(plaintext, key, iv);
@@ -125,8 +125,8 @@ public class AesTest {
     void shouldPreferRecommendedNonceSize() throws CryptoException {
         // Test that 12-byte nonce still works (recommended)
         Bytes plaintext = Bytes.wrap("Recommended nonce test".getBytes());
-        Bytes key = Bytes.wrap(CryptoProvider.getRandomBytes(32)); // AES-256
-        Bytes recommendedNonce = Bytes.wrap(CryptoProvider.getRandomBytes(12)); // Recommended size
+        Bytes key = Bytes.wrap(CryptoProvider.nextBytes(32)); // AES-256
+        Bytes recommendedNonce = Bytes.wrap(CryptoProvider.nextBytes(12)); // Recommended size
 
         Bytes ciphertext = Aes.encrypt(plaintext, key, recommendedNonce);
         assertNotNull(ciphertext);
@@ -139,7 +139,7 @@ public class AesTest {
     void shouldEncryptAndDecryptEmptyData() throws CryptoException {
         Bytes plaintext = Bytes.EMPTY;
         Bytes32 key = Bytes32.random();
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         Bytes ciphertext = Aes.encrypt(plaintext, key, nonce);
         assertNotNull(ciphertext);
@@ -154,7 +154,7 @@ public class AesTest {
     void shouldEncryptAndDecryptLongerData() throws CryptoException {
         Bytes plaintext = Bytes.wrap("This is a longer message that should be encrypted and decrypted correctly.".getBytes());
         Bytes32 key = Bytes32.random();
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         Bytes ciphertext = Aes.encrypt(plaintext, key, nonce);
         assertNotNull(ciphertext);
@@ -167,7 +167,7 @@ public class AesTest {
     @Test
     void shouldThrowOnNullPlaintext() {
         Bytes32 key = Bytes32.random();
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.encrypt(null, key, nonce));
         assertTrue(exception.getMessage().contains("Plaintext cannot be null"));
@@ -176,7 +176,7 @@ public class AesTest {
     @Test
     void shouldThrowOnNullKey() {
         Bytes plaintext = Bytes.wrap("test".getBytes());
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.encrypt(plaintext, null, nonce));
         assertTrue(exception.getMessage().contains("Key cannot be null"));
@@ -194,7 +194,7 @@ public class AesTest {
     @Test
     void shouldThrowOnDecryptWithNullCiphertext() {
         Bytes32 key = Bytes32.random();
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.decrypt(null, key, nonce));
         assertTrue(exception.getMessage().contains("Ciphertext cannot be null"));
@@ -203,7 +203,7 @@ public class AesTest {
     @Test
     void shouldThrowOnDecryptWithNullKey() {
         Bytes ciphertext = Bytes.wrap(new byte[32]);
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.decrypt(ciphertext, null, nonce));
         assertTrue(exception.getMessage().contains("Key cannot be null"));
@@ -222,7 +222,7 @@ public class AesTest {
     void shouldThrowOnInvalidKeySize() {
         Bytes plaintext = Bytes.wrap("test".getBytes());
         Bytes invalidKey = Bytes.wrap(new byte[15]); // Invalid size (15 bytes)
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.encrypt(plaintext, invalidKey, nonce));
         assertTrue(exception.getMessage().contains("Invalid AES key size: 15 bytes"));
@@ -244,7 +244,7 @@ public class AesTest {
     void shouldThrowOnShortCiphertext() {
         Bytes shortCiphertext = Bytes.wrap(new byte[10]); // Too short to contain auth tag
         Bytes32 key = Bytes32.random();
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         CryptoException exception = assertThrows(CryptoException.class, () -> Aes.decrypt(shortCiphertext, key, nonce));
         assertTrue(exception.getMessage().contains("Ciphertext is too short to contain a valid authentication tag"));
@@ -253,9 +253,9 @@ public class AesTest {
     @Test
     void shouldFailDecryptionWithWrongKey() {
         Bytes plaintext = Bytes.wrap("test data".getBytes());
-        Bytes key1 = Bytes.wrap(CryptoProvider.getRandomBytes(24));
-        Bytes key2 = Bytes.wrap(CryptoProvider.getRandomBytes(24)); // Different key
-        Bytes nonce = Bytes.wrap(CryptoProvider.getRandomBytes(NONCE_SIZE));
+        Bytes key1 = Bytes.wrap(CryptoProvider.nextBytes(24));
+        Bytes key2 = Bytes.wrap(CryptoProvider.nextBytes(24)); // Different key
+        Bytes nonce = Bytes.wrap(CryptoProvider.nextBytes(NONCE_SIZE));
 
         try {
             Bytes ciphertext = Aes.encrypt(plaintext, key1, nonce);
