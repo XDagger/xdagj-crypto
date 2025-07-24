@@ -65,13 +65,13 @@ io.xdag.crypto/
 <dependency>
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-crypto</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
 </dependency>
 ```
 
 ### Gradle
 ```gradle
-implementation 'io.xdag:xdagj-crypto:0.1.0'
+implementation 'io.xdag:xdagj-crypto:0.1.1'
 ```
 
 ### System Requirements
