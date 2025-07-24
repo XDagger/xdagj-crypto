@@ -53,7 +53,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
  * {@code m / 44' / 586' / account' / 0 / address_index}
  * where 586 is XDAG's registered coin type.
  * 
- * <h3>Usage Guide</h3>
+ * <h2>Usage Guide</h2>
  * 
  * <p><strong>Choose the right method for your use case:</strong>
  * 

@@ -188,9 +188,11 @@ public final class CryptoProvider {
     }
 
     /**
-     * Generate a cryptographically secure random integer.
+     * Generate a cryptographically secure random integer within a range.
      *
-     * @return a random integer
+     * @param min the minimum value (inclusive)
+     * @param max the maximum value (exclusive)
+     * @return a random integer between min (inclusive) and max (exclusive)
      */
     public static int nextInt(int min, int max) {
         return getSecureRandom().nextInt(min, max);
@@ -205,6 +207,13 @@ public final class CryptoProvider {
         return getSecureRandom().nextLong();
     }
 
+    /**
+     * Generate a cryptographically secure random long within a range.
+     *
+     * @param lower the minimum value (inclusive)
+     * @param upper the maximum value (exclusive)
+     * @return a random long between lower (inclusive) and upper (exclusive)
+     */
     public static long nextLong(long lower, long upper) {
         return getSecureRandom().nextLong(lower, upper);
     }

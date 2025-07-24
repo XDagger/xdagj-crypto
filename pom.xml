@@ -6,7 +6,7 @@
 
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-crypto</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
 
     <name>xdagj-crypto</name>
     <description>A Java Crypto Library For XDAGJ</description>
@@ -22,7 +22,6 @@
 
         <!-- utils -->
         <lombok.version>1.18.38</lombok.version>
-        <guava.version>33.4.8-jre</guava.version>
 
         <!-- crypto -->
         <tuweni.version>2.7.0</tuweni.version>

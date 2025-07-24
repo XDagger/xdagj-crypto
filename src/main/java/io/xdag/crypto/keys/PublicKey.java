@@ -346,6 +346,69 @@ public final class PublicKey {
     }
 
     /**
+     * Creates a public key from XDAG format: 32-byte x coordinate and y-bit.
+     * 
+     * <p>This method is specifically designed for XDAG blockchain compatibility,
+     * where public keys are stored as 32-byte x coordinates with a separate y-bit
+     * indicating the sign of the y coordinate.
+     * 
+     * @param xCoordinate the 32-byte x coordinate as Bytes
+     * @param yBit true if y coordinate is odd, false if even
+     * @return a new PublicKey instance
+     * @throws CryptoException if the x coordinate is invalid or doesn't form a valid point
+     */
+    public static PublicKey fromXCoordinate(Bytes xCoordinate, boolean yBit) throws CryptoException {
+        if (xCoordinate == null) {
+            throw new CryptoException("X coordinate cannot be null");
+        }
+        if (xCoordinate.size() != 32) {
+            throw new CryptoException("X coordinate must be exactly 32 bytes, got " + xCoordinate.size());
+        }
+        
+        return fromXCoordinate(xCoordinate.toUnsignedBigInteger(), yBit);
+    }
+
+    /**
+     * Creates a public key from XDAG format: x coordinate BigInteger and y-bit.
+     * 
+     * <p>This method reconstructs a compressed public key from the x coordinate
+     * and y-bit information used in XDAG blockchain format.
+     * 
+     * @param xCoordinate the x coordinate as BigInteger
+     * @param yBit true if y coordinate is odd, false if even
+     * @return a new PublicKey instance
+     * @throws CryptoException if the x coordinate is invalid or doesn't form a valid point
+     */
+    public static PublicKey fromXCoordinate(BigInteger xCoordinate, boolean yBit) throws CryptoException {
+        if (xCoordinate == null) {
+            throw new CryptoException("X coordinate cannot be null");
+        }
+        
+        try {
+            // Create compressed public key format (33 bytes)
+            // First byte: 0x02 for even y, 0x03 for odd y
+            byte[] compressedBytes = new byte[33];
+            compressedBytes[0] = (byte) (yBit ? 0x03 : 0x02);
+            
+            // Copy x coordinate to remaining 32 bytes
+            byte[] xBytes = xCoordinate.toByteArray();
+            if (xBytes.length <= 32) {
+                // Right-align the x coordinate in the 32-byte space
+                System.arraycopy(xBytes, 0, compressedBytes, 33 - xBytes.length, xBytes.length);
+            } else if (xBytes.length == 33 && xBytes[0] == 0) {
+                // Remove leading zero byte from BigInteger
+                System.arraycopy(xBytes, 1, compressedBytes, 1, 32);
+            } else {
+                throw new CryptoException("X coordinate is too large for 32 bytes");
+            }
+            
+            return fromBytes(compressedBytes);
+        } catch (Exception e) {
+            throw new CryptoException("Failed to create public key from x coordinate and y-bit", e);
+        }
+    }
+
+    /**
      * Checks if this public key is in compressed format by default.
      * 
      * @return true if the public key is typically used in compressed format
