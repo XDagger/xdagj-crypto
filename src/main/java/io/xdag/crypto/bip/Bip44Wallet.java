@@ -53,32 +53,41 @@ import org.bouncycastle.crypto.params.KeyParameter;
  * {@code m / 44' / 586' / account' / 0 / address_index}
  * where 586 is XDAG's registered coin type.
  * 
- * <h3>Usage Examples</h3>
+ * <h3>Usage Guide</h3>
  * 
- * <p><strong>Simple Key Pair Generation (Recommended for basic use cases):</strong>
+ * <p><strong>Choose the right method for your use case:</strong>
+ * 
+ * <p><strong>1. Simple Key Pair Generation (Most common use case):</strong>
+ * <br>Use when you just need one key pair for signing, verification, etc.
  * <pre>{@code
- * // From mnemonic phrase
+ * // From mnemonic phrase (recommended)
  * String mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
  * ECKeyPair keyPair = Bip44Wallet.createKeyPairFromMnemonic(mnemonic);
  * 
- * // Use the key pair for signing, verification, etc.
+ * // Or from raw seed
+ * byte[] seed = Bip39Mnemonic.toSeed(mnemonic).toArrayUnsafe();
+ * ECKeyPair keyPair = Bip44Wallet.createKeyPair(seed);
+ * 
+ * // Use the key pair directly
  * byte[] message = "Hello XDAG".getBytes();
  * Signature signature = Signer.signMessage(keyPair, message);
  * }</pre>
  * 
- * <p><strong>Full HD Wallet with Key Derivation (For advanced wallet features):</strong>
+ * <p><strong>2. HD Wallet with Multiple Addresses (Advanced use case):</strong>
+ * <br>Use when you need to generate multiple related addresses from one seed.
  * <pre>{@code
- * // Create master key
+ * // Create master key with full BIP32 capabilities
  * byte[] seed = Bip39Mnemonic.toSeed(mnemonic).toArrayUnsafe();
  * Bip32Key masterKey = Bip44Wallet.createMasterKey(seed);
  * 
- * // Derive account-specific keys
- * Bip32Key accountKey = Bip44Wallet.deriveXdagKey(masterKey, 0, 0); // First account, first address
- * Bip32Key accountKey2 = Bip44Wallet.deriveXdagKey(masterKey, 0, 1); // First account, second address
+ * // Derive multiple account addresses
+ * Bip32Key address1 = Bip44Wallet.deriveXdagKey(masterKey, 0, 0); // First account, first address
+ * Bip32Key address2 = Bip44Wallet.deriveXdagKey(masterKey, 0, 1); // First account, second address
+ * Bip32Key address3 = Bip44Wallet.deriveXdagKey(masterKey, 1, 0); // Second account, first address
  * 
- * // Extract key pairs for use
- * ECKeyPair keyPair1 = accountKey.keyPair();
- * ECKeyPair keyPair2 = accountKey2.keyPair();
+ * // Extract key pairs when needed
+ * ECKeyPair keyPair1 = address1.keyPair();
+ * ECKeyPair keyPair2 = address2.keyPair();
  * }</pre>
  * 
  * <p><strong>Security Note:</strong> Seeds and private keys are handled securely with
@@ -126,29 +135,18 @@ public final class Bip44Wallet {
             throw new CryptoException("Seed must be at least 16 bytes");
         }
 
-        try {
-            // Generate master key using HMAC-SHA512
-            HMac hmac = new HMac(new SHA512Digest());
-            hmac.init(new KeyParameter(BITCOIN_SEED.getBytes(StandardCharsets.UTF_8)));
-            hmac.update(seed, 0, seed.length);
-
-            byte[] i = new byte[hmac.getMacSize()];
-            hmac.doFinal(i, 0);
-
-            // Split result: first 32 bytes = private key, last 32 bytes = chain code
-            BigInteger privateKey = new BigInteger(1, Arrays.copyOfRange(i, 0, 32));
-            if (!KeyValidator.isValidDerivedKeyRange(privateKey)) {
-                throw new CryptoException("Invalid master private key generated");
-            }
-
-            ECKeyPair masterKeyPair = ECKeyPair.fromPrivateKey(PrivateKey.fromBigInteger(privateKey));
-            Bytes32 chainCode = Bytes32.wrap(Arrays.copyOfRange(i, 32, 64));
-
-            return new Bip32Key(masterKeyPair, chainCode, 0, 0, Bytes.EMPTY);
-
-        } catch (Exception e) {
-            throw new CryptoException("Failed to create master key", e);
+        byte[] masterKeyMaterial = deriveMasterKeyMaterial(seed);
+        
+        // Split result: first 32 bytes = private key, last 32 bytes = chain code
+        BigInteger privateKey = new BigInteger(1, Arrays.copyOfRange(masterKeyMaterial, 0, 32));
+        if (!KeyValidator.isValidDerivedKeyRange(privateKey)) {
+            throw new CryptoException("Invalid master private key generated");
         }
+
+        ECKeyPair masterKeyPair = ECKeyPair.fromPrivateKey(PrivateKey.fromBigInteger(privateKey));
+        Bytes32 chainCode = Bytes32.wrap(Arrays.copyOfRange(masterKeyMaterial, 32, 64));
+
+        return new Bip32Key(masterKeyPair, chainCode, 0, 0, Bytes.EMPTY);
     }
 
     /**
@@ -159,13 +157,26 @@ public final class Bip44Wallet {
      * HD wallet functionality (key derivation, account management), use {@link #createMasterKey(byte[])} instead.
      * 
      * <p>The generated key pair can be used for signing, verification, and basic cryptographic operations.
+     * This method is more efficient than creating a full BIP32 master key when only the key pair is needed.
      * 
      * @param seed the cryptographic seed (typically 64 bytes from BIP39)
      * @return an ECKeyPair for direct cryptographic operations
      * @throws CryptoException if key generation fails
      */
     public static ECKeyPair createKeyPair(byte[] seed) throws CryptoException {
-        return createMasterKey(seed).keyPair();
+        if (seed == null || seed.length < 16) {
+            throw new CryptoException("Seed must be at least 16 bytes");
+        }
+
+        byte[] masterKeyMaterial = deriveMasterKeyMaterial(seed);
+        
+        // Only extract the private key part, ignore chain code for simple usage
+        BigInteger privateKey = new BigInteger(1, Arrays.copyOfRange(masterKeyMaterial, 0, 32));
+        if (!KeyValidator.isValidDerivedKeyRange(privateKey)) {
+            throw new CryptoException("Invalid master private key generated");
+        }
+
+        return ECKeyPair.fromPrivateKey(PrivateKey.fromBigInteger(privateKey));
     }
 
     /**
@@ -295,6 +306,29 @@ public final class Bip44Wallet {
         Bytes parentFingerprint = HashUtils.sha256hash160(Bytes.wrap(parentPublicKey)).slice(0, 4);
         
         return new Bip32Key(derivedKeyPair, derivedChainCode, parent.depth() + 1, childNumber, parentFingerprint);
+    }
+
+    /**
+     * Derives the master key material using HMAC-SHA512 according to BIP32.
+     * 
+     * @param seed the input seed
+     * @return 64 bytes: first 32 bytes are the private key, last 32 bytes are the chain code
+     * @throws CryptoException if derivation fails
+     */
+    private static byte[] deriveMasterKeyMaterial(byte[] seed) throws CryptoException {
+        try {
+            // Generate master key using HMAC-SHA512
+            HMac hmac = new HMac(new SHA512Digest());
+            hmac.init(new KeyParameter(BITCOIN_SEED.getBytes(StandardCharsets.UTF_8)));
+            hmac.update(seed, 0, seed.length);
+
+            byte[] result = new byte[hmac.getMacSize()];
+            hmac.doFinal(result, 0);
+            return result;
+
+        } catch (Exception e) {
+            throw new CryptoException("Failed to derive master key material", e);
+        }
     }
 
     /**
