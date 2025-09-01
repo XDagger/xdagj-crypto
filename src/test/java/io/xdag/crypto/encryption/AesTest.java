@@ -105,7 +105,7 @@ class AesTest {
 
         byte[] ciphertext = Aes.encrypt(plaintext, key, iv);
         
-        // Decryption with wrong key should fail due to padding corruption
+        // Decryption with a wrong key should fail due to padding corruption
         assertThrows(RuntimeException.class, () -> Aes.decrypt(ciphertext, wrongKey, iv));
     }
 

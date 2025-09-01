@@ -205,7 +205,7 @@ public final class HashUtils {
 
     /**
      * Perform a secure comparison of two byte arrays in constant time.
-     * Legacy method - prefer Bytes version for better performance.
+     * Legacy method - prefer the Bytes version for better performance.
      * 
      * @param a the first byte array
      * @param b the second byte array

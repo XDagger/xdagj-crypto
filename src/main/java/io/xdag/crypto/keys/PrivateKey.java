@@ -135,7 +135,7 @@ public final class PrivateKey {
      * Generates a cryptographically secure random private key.
      * 
      * <p>This method uses {@link CryptoProvider} to generate a random private key
-     * that is guaranteed to be in the valid range for the secp256k1 curve (1 to n-1).
+     *  guaranteed to be in the valid range for the secp256k1 curve (1 to n-1).
      * 
      * @return a new randomly generated PrivateKey
      * @throws CryptoException if random key generation fails
@@ -192,7 +192,7 @@ public final class PrivateKey {
         if (bytes.length == 32) {
             return Bytes32.wrap(bytes);
         } else if (bytes.length == 33 && bytes[0] == 0) {
-            // Remove leading zero byte
+            // Remove leading zero bytes
             byte[] trimmed = new byte[32];
             System.arraycopy(bytes, 1, trimmed, 0, 32);
             return Bytes32.wrap(trimmed);

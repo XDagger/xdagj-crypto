@@ -24,6 +24,7 @@
 package io.xdag.crypto.bip;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -138,8 +139,8 @@ class Bip44WalletTest {
         assertNotNull(keyPairWithoutPassphrase);
         
         // Should be different with and without passphrase
-        assertTrue(!keyPairWithPassphrase.getPrivateKey().toBigInteger()
-                .equals(keyPairWithoutPassphrase.getPrivateKey().toBigInteger()));
+        assertNotEquals(keyPairWithPassphrase.getPrivateKey().toBigInteger(),
+            keyPairWithoutPassphrase.getPrivateKey().toBigInteger());
         
         // Should be deterministic with same passphrase
         ECKeyPair keyPairWithPassphrase2 = Bip44Wallet.createKeyPairFromMnemonic(mnemonic, passphrase);

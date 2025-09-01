@@ -33,7 +33,7 @@ import org.bouncycastle.util.Arrays;
 /**
  * A custom SHA-256 digest implementation tailored for XDAG's specific hashing requirements.
  * 
- * <p>This implementation provides XDAG-specific hash behavior including:
+ * <p>This implementation provides XDAG-specific hash behavior including
  * - Double SHA-256 hashing (hash of hash)
  * - Final byte reversal for endianness compatibility
  * - State extraction for interoperability with C implementations

@@ -33,7 +33,7 @@ import org.apache.tuweni.bytes.Bytes32;
 /**
  * Base58 encoding and decoding utilities.
  * 
- * <p>Base58 is a binary-to-text encoding scheme that is commonly used
+ * <p>Base58 is a binary-to-text encoding scheme commonly used
  * in cryptocurrency applications. It avoids the use of similar-looking
  * characters (0, O, I, l) to reduce user error.
  * 
@@ -77,7 +77,7 @@ public final class Base58 {
             return "";
         }
         
-        // Convert to byte array for processing
+        // Convert to a byte array for processing
         byte[] inputBytes = input.toArrayUnsafe();
         
         // Count leading zeros
@@ -137,7 +137,7 @@ public final class Base58 {
             return Bytes.EMPTY;
         }
 
-        // Convert the string to byte array
+        // Convert the string to a byte array
         byte[] input58 = new byte[input.length()];
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
@@ -174,7 +174,7 @@ public final class Base58 {
     }
     
     /**
-     * Decode a Base58 string to byte array.
+     * Decode a Base58 string to a byte array.
      * Legacy compatibility method - prefer {@link #decode(String)}.
      *
      * @param input the Base58 string to decode

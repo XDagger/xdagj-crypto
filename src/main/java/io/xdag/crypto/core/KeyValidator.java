@@ -99,7 +99,7 @@ public final class KeyValidator {
      * 
      * @param bytes the byte array to validate
      * @param fieldName descriptive name for error messages (e.g., "private key", "hash")
-     * @throws CryptoException if bytes is null or not exactly 32 bytes
+     * @throws CryptoException if bytes are null or not exactly 32 bytes
      */
     public static void validate32Bytes(byte[] bytes, String fieldName) throws CryptoException {
         if (bytes == null) {
@@ -160,7 +160,7 @@ public final class KeyValidator {
      * </ul>
      * 
      * @param bytes the public key bytes to validate
-     * @throws CryptoException if bytes is null or has invalid length
+     * @throws CryptoException if bytes are null or have invalid length
      */
     public static void validatePublicKeyBytes(byte[] bytes) throws CryptoException {
         if (bytes == null) {
@@ -177,7 +177,7 @@ public final class KeyValidator {
      * Validates that a public key Bytes object has the correct size.
      * 
      * @param bytes the public key Bytes to validate
-     * @throws CryptoException if bytes is null or has invalid size
+     * @throws CryptoException if bytes are null or have invalid size
      */
     public static void validatePublicKeyBytes(Bytes bytes) throws CryptoException {
         if (bytes == null) {

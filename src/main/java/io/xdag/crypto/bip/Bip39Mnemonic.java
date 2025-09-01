@@ -164,7 +164,7 @@ public final class Bip39Mnemonic {
     }
     
     /**
-     * Parse mnemonic string into word list.
+     * Parse mnemonic string into the word list.
      * Internal method for parsing mnemonic strings.
      * 
      * @param mnemonic space-separated mnemonic string
@@ -221,7 +221,7 @@ public final class Bip39Mnemonic {
                 indices[i] = index;
             }
 
-            // Convert to bit array
+            // Convert to a bit array
             BitSet bits = new BitSet();
             for (int i = 0; i < wordCount; i++) {
                 for (int j = 0; j < 11; j++) {
@@ -347,7 +347,7 @@ public final class Bip39Mnemonic {
     }
 
     /**
-     * Generate a seed from a mnemonic without passphrase.
+     * Generate a seed from a mnemonic without a passphrase.
      *
      * @param mnemonic the mnemonic words
      * @return the derived seed as Bytes (64 bytes)
@@ -447,7 +447,7 @@ public final class Bip39Mnemonic {
             byte checksumMask = (byte) (0xff << (8 - entropySize / 4));
             byte checksumByte = (byte) (hash.get(0) & checksumMask);
 
-            // Convert to bit array
+            // Convert to a bit array
             BitSet entropyBits = bytesToBits(entropy.toArrayUnsafe());
             BitSet checksumBits = new BitSet();
             

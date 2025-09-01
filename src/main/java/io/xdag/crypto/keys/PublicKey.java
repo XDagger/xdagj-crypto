@@ -223,7 +223,7 @@ public final class PublicKey {
     /**
      * Generates an XDAG address from this public key.
      * 
-     * @param compressed whether to use compressed public key format
+     * @param compressed whether to use the compressed public key format
      * @return the XDAG address as bytes
      */
     public Bytes toAddress(boolean compressed) {
@@ -242,7 +242,7 @@ public final class PublicKey {
     /**
      * Generates a Base58Check encoded XDAG address from this public key.
      * 
-     * @param compressed whether to use compressed public key format
+     * @param compressed whether to use the compressed public key format
      * @return the Base58Check encoded address
      */
     public String toBase58Address(boolean compressed) {
@@ -307,7 +307,7 @@ public final class PublicKey {
         if (bytes.length == 64) {
             coordinates = bytes;
         } else if (bytes.length == 65 && bytes[0] == 0) {
-            // Remove leading zero byte
+            // Remove leading zero bytes
             System.arraycopy(bytes, 1, coordinates, 0, 64);
         } else if (bytes.length < 64) {
             // Pad with leading zeros
@@ -385,7 +385,7 @@ public final class PublicKey {
         }
         
         try {
-            // Create compressed public key format (33 bytes)
+            // Create the compressed public key format (33 bytes)
             // First byte: 0x02 for even y, 0x03 for odd y
             byte[] compressedBytes = new byte[33];
             compressedBytes[0] = (byte) (yBit ? 0x03 : 0x02);
