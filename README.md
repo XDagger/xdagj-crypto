@@ -10,7 +10,8 @@ A production-grade cryptographic library for XDAG blockchain applications with f
 ## 🆕 What's New in v0.1.2
 
 - **Enhanced XDAG Compatibility**: Added `PublicKey.fromXCoordinate()` method for XDAG's 32-byte x-coordinate + y-bit format
-- **Simplified HD Wallet API**: Direct key pair generation from mnemonic phrases
+- **Simplified AES Implementation**: AES-CBC encryption for full backward compatibility with existing xdagj wallet files
+- **Simplified HD Wallet API**: Direct key pair generation from mnemonic phrases  
 - **Improved Documentation**: Fixed Javadoc warnings and enhanced API documentation
 - **Optimized Dependencies**: Removed unnecessary configurations for better performance
 
@@ -74,23 +75,23 @@ import io.xdag.crypto.encryption.Aes;
 Signature signature = Signer.sign(messageHash, keyPair);
 boolean valid = Signer.verify(messageHash, signature, keyPair.getPublicKey());
 
-// AES-256-GCM encryption
-Bytes cipherText = Aes.encrypt(plainText, encryptionKey, nonce);
-Bytes decrypted = Aes.decrypt(cipherText, encryptionKey, nonce);
+// AES-CBC encryption (xdagj compatible)  
+byte[] cipherText = Aes.encrypt(plainText, encryptionKey, iv);
+byte[] decrypted = Aes.decrypt(cipherText, encryptionKey, iv);
 ```
 
 ## 🏗️ Core Features
 
 - **Elliptic Curve Cryptography**: ECDSA with secp256k1 curve
 - **Hierarchical Deterministic Wallets**: BIP32/BIP39/BIP44 implementation  
-- **Symmetric Encryption**: AES-256-GCM authenticated encryption
+- **Symmetric Encryption**: AES-CBC encryption (xdagj compatible)
 - **Hash Functions**: SHA-256, RIPEMD-160, HMAC operations
 - **Address Generation**: XDAG-compatible Base58 addresses
 - **XDAG Integration**: Native support for XDAG public key formats
 
 ## 🛡️ Security
 
-- **Cryptographic Standards**: ECDSA (secp256k1), AES-256-GCM, SHA-256, PBKDF2
+- **Cryptographic Standards**: ECDSA (secp256k1), AES-CBC, SHA-256, PBKDF2
 - **Constant-Time Operations**: Prevents timing attacks
 - **Secure Random Generation**: Platform-optimal entropy sources  
 - **Input Validation**: Comprehensive validation with detailed error messages
