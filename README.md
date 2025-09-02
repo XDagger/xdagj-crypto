@@ -7,13 +7,14 @@
 
 A production-grade cryptographic library for XDAG blockchain applications with focus on security, performance, and developer experience.
 
-## 🆕 What's New in v0.1.2
+## 🆕 What's New in v0.1.3
 
 - **Enhanced XDAG Compatibility**: Added `PublicKey.fromXCoordinate()` method for XDAG's 32-byte x-coordinate + y-bit format
 - **Simplified AES Implementation**: AES-CBC encryption for full backward compatibility with existing xdagj wallet files
 - **Simplified HD Wallet API**: Direct key pair generation from mnemonic phrases  
 - **Improved Documentation**: Fixed Javadoc warnings and enhanced API documentation
-- **Optimized Dependencies**: Removed unnecessary configurations for better performance
+- **Optimized Dependencies**: Removed unused dependencies (tuweni-io, bcpkix-jdk18on, slf4j-simple)
+- **Corrected Documentation**: Fixed AES encryption mode descriptions to match actual implementation
 
 ## 📦 Installation
 
@@ -22,13 +23,13 @@ A production-grade cryptographic library for XDAG blockchain applications with f
 <dependency>
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-crypto</artifactId>
-    <version>0.1.2</version>
+    <version>0.1.3</version>
 </dependency>
 ```
 
 ### Gradle
 ```gradle
-implementation 'io.xdag:xdagj-crypto:0.1.2'
+implementation 'io.xdag:xdagj-crypto:0.1.3'
 ```
 
 **Requirements**: Java 21+
@@ -44,7 +45,7 @@ import io.xdag.crypto.keys.*;
 ECKeyPair keyPair = ECKeyPair.generate();
 String address = keyPair.toBase58Address();
 
-// XDAG compatibility (NEW v0.1.2): Create from x-coordinate + y-bit
+// XDAG compatibility (NEW v0.1.3): Create from x-coordinate + y-bit
 PublicKey xdagKey = PublicKey.fromXCoordinate(xCoordinate, yBit);
 ```
 
@@ -56,7 +57,7 @@ import io.xdag.crypto.bip.*;
 // Generate mnemonic and derive key pairs
 String mnemonic = Bip39Mnemonic.generateString();
 
-// NEW v0.1.2: Simplified API for basic use cases
+// NEW v0.1.3: Simplified API for basic use cases
 ECKeyPair keyPair = Bip44Wallet.createKeyPairFromMnemonic(mnemonic);
 
 // Advanced: BIP44 derivation path m/44'/586'/0'/0/0
@@ -103,7 +104,7 @@ byte[] decrypted = Aes.decrypt(cipherText, encryptionKey, iv);
 - **Bouncy Castle**: Cryptographic implementations  
 - **SLF4J**: Logging framework
 
-## 📊 Key Features v0.1.2
+## 📊 Key Features v0.1.3
 
 ### New XDAG Compatibility
 ```java
