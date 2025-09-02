@@ -27,7 +27,6 @@
         <tuweni.version>2.7.0</tuweni.version>
         <bcprov-jdk18on.version>1.80</bcprov-jdk18on.version>
 
-
         <!-- log -->
         <slf4j.version>2.0.17</slf4j.version>
 
@@ -305,8 +304,6 @@
             </exclusions>
         </dependency>
 
-
-
         <!-- BouncyCastle - Core crypto provider -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -320,8 +317,6 @@
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
-
-
 
         <!-- Development Dependencies -->
         <dependency>
@@ -345,10 +340,6 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-
-
-
-
 
     </dependencies>
 
