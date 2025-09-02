@@ -7,12 +7,14 @@
 
 A production-grade cryptographic library for XDAG blockchain applications with focus on security, performance, and developer experience.
 
-## 🆕 What's New in v0.1.1
+## 🆕 What's New in v0.1.3
 
 - **Enhanced XDAG Compatibility**: Added `PublicKey.fromXCoordinate()` method for XDAG's 32-byte x-coordinate + y-bit format
-- **Simplified HD Wallet API**: Direct key pair generation from mnemonic phrases
+- **Simplified AES Implementation**: AES-CBC encryption for full backward compatibility with existing xdagj wallet files
+- **Simplified HD Wallet API**: Direct key pair generation from mnemonic phrases  
 - **Improved Documentation**: Fixed Javadoc warnings and enhanced API documentation
-- **Optimized Dependencies**: Removed unnecessary configurations for better performance
+- **Optimized Dependencies**: Removed unused dependencies (tuweni-io, bcpkix-jdk18on, slf4j-simple)
+- **Corrected Documentation**: Fixed AES encryption mode descriptions to match actual implementation
 
 ## 📦 Installation
 
@@ -21,13 +23,13 @@ A production-grade cryptographic library for XDAG blockchain applications with f
 <dependency>
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-crypto</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.3</version>
 </dependency>
 ```
 
 ### Gradle
 ```gradle
-implementation 'io.xdag:xdagj-crypto:0.1.1'
+implementation 'io.xdag:xdagj-crypto:0.1.3'
 ```
 
 **Requirements**: Java 21+
@@ -43,7 +45,7 @@ import io.xdag.crypto.keys.*;
 ECKeyPair keyPair = ECKeyPair.generate();
 String address = keyPair.toBase58Address();
 
-// XDAG compatibility (NEW v0.1.1): Create from x-coordinate + y-bit
+// XDAG compatibility (NEW v0.1.3): Create from x-coordinate + y-bit
 PublicKey xdagKey = PublicKey.fromXCoordinate(xCoordinate, yBit);
 ```
 
@@ -55,7 +57,7 @@ import io.xdag.crypto.bip.*;
 // Generate mnemonic and derive key pairs
 String mnemonic = Bip39Mnemonic.generateString();
 
-// NEW v0.1.1: Simplified API for basic use cases
+// NEW v0.1.3: Simplified API for basic use cases
 ECKeyPair keyPair = Bip44Wallet.createKeyPairFromMnemonic(mnemonic);
 
 // Advanced: BIP44 derivation path m/44'/586'/0'/0/0
@@ -74,23 +76,23 @@ import io.xdag.crypto.encryption.Aes;
 Signature signature = Signer.sign(messageHash, keyPair);
 boolean valid = Signer.verify(messageHash, signature, keyPair.getPublicKey());
 
-// AES-256-GCM encryption
-Bytes cipherText = Aes.encrypt(plainText, encryptionKey, nonce);
-Bytes decrypted = Aes.decrypt(cipherText, encryptionKey, nonce);
+// AES-CBC encryption (xdagj compatible)  
+byte[] cipherText = Aes.encrypt(plainText, encryptionKey, iv);
+byte[] decrypted = Aes.decrypt(cipherText, encryptionKey, iv);
 ```
 
 ## 🏗️ Core Features
 
 - **Elliptic Curve Cryptography**: ECDSA with secp256k1 curve
 - **Hierarchical Deterministic Wallets**: BIP32/BIP39/BIP44 implementation  
-- **Symmetric Encryption**: AES-256-GCM authenticated encryption
+- **Symmetric Encryption**: AES-CBC encryption (xdagj compatible)
 - **Hash Functions**: SHA-256, RIPEMD-160, HMAC operations
 - **Address Generation**: XDAG-compatible Base58 addresses
 - **XDAG Integration**: Native support for XDAG public key formats
 
 ## 🛡️ Security
 
-- **Cryptographic Standards**: ECDSA (secp256k1), AES-256-GCM, SHA-256, PBKDF2
+- **Cryptographic Standards**: ECDSA (secp256k1), AES-CBC, SHA-256, PBKDF2
 - **Constant-Time Operations**: Prevents timing attacks
 - **Secure Random Generation**: Platform-optimal entropy sources  
 - **Input Validation**: Comprehensive validation with detailed error messages
@@ -102,7 +104,7 @@ Bytes decrypted = Aes.decrypt(cipherText, encryptionKey, nonce);
 - **Bouncy Castle**: Cryptographic implementations  
 - **SLF4J**: Logging framework
 
-## 📊 Key Features v0.1.1
+## 📊 Key Features v0.1.3
 
 ### New XDAG Compatibility
 ```java

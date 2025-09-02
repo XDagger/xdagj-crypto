@@ -49,7 +49,7 @@ class SignerTest {
         assertNotNull(signature);
         assertTrue(signature.isCanonical());
 
-        // Verify with public key
+        // Verify with the public key
         assertTrue(Signer.verify(testMessageHash, signature, testKeyPair.getPublicKey()));
 
         // Verify with ECKeyPair
@@ -114,7 +114,7 @@ class SignerTest {
 
     @Test
     void shouldProduceDeterministicSignatures() throws CryptoException {
-        // Same message and key should produce same signature (deterministic signing)
+        // The Same message and key should produce the same signature (deterministic signing)
         Signature signature1 = Signer.sign(testMessageHash, testKeyPair);
         Signature signature2 = Signer.sign(testMessageHash, testKeyPair);
 

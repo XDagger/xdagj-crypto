@@ -32,8 +32,6 @@ package io.xdag.crypto.exception;
  */
 public class CryptoException extends RuntimeException {
     
-    private static final long serialVersionUID = 1L;
-    
     /**
      * Constructs a new crypto exception with the specified detail message.
      * 

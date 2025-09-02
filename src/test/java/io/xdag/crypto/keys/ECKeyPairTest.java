@@ -279,7 +279,7 @@ class ECKeyPairTest {
             assertTrue(keyPair.getPrivateKey().toBigInteger().signum() > 0);
             assertTrue(keyPair.getPrivateKey().toBigInteger().compareTo(CryptoProvider.getCurve().getN()) < 0);
             
-            // Should be able to derive the same public key from private key
+            // Should be able to derive the same public key from the private key
             PublicKey derivedPublicKey = keyPair.getPrivateKey().getPublicKey();
             assertEquals(keyPair.getPublicKey().toCompressedBytes(), derivedPublicKey.toCompressedBytes());
         }
@@ -325,7 +325,7 @@ class ECKeyPairTest {
         assertEquals(publicOnlyKeyPair2, publicOnlyKeyPair1);
         assertEquals(publicOnlyKeyPair2.hashCode(), publicOnlyKeyPair1.hashCode());
         
-        // Mixed comparison (full key pair vs public-only)
+        // Mixed comparison (full key pair vs. public-only)
         assertNotEquals(publicOnlyKeyPair1, keyPair1);
     }
 

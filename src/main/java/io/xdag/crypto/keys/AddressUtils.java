@@ -132,7 +132,7 @@ public final class AddressUtils {
 
 
     /**
-     * Generate a Base58Check encoded address from a PrivateKey using compressed public key.
+     * Generate a Base58Check encoded address from a PrivateKey using a compressed public key.
      *
      * @param privateKey The PrivateKey.
      * @return The Base58Check encoded address string.
@@ -175,7 +175,7 @@ public final class AddressUtils {
     }
 
     /**
-     * Generate a Base58Check encoded address from an ECKeyPair using compressed public key.
+     * Generate a Base58Check encoded address from an ECKeyPair using a compressed public key.
      *
      * @param keyPair The ECKeyPair.
      * @return The Base58Check encoded address string.

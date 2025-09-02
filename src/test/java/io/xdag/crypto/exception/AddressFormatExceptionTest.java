@@ -61,7 +61,7 @@ public class AddressFormatExceptionTest {
         
         assertEquals("Invalid character 'O' at position 5", e.getMessage());
         assertNull(e.getCause());
-        assertTrue(e instanceof AddressFormatException);
+        assertInstanceOf(AddressFormatException.class, e);
     }
 
     @Test
@@ -71,7 +71,7 @@ public class AddressFormatExceptionTest {
         
         assertEquals("Invalid data length: too short", e.getMessage());
         assertNull(e.getCause());
-        assertTrue(e instanceof AddressFormatException);
+        assertInstanceOf(AddressFormatException.class, e);
     }
 
     @Test
@@ -93,8 +93,8 @@ public class AddressFormatExceptionTest {
         AddressFormatException e = new AddressFormatException("test");
         
         // Should inherit from CryptoException
-        assertTrue(e instanceof CryptoException);
-        assertTrue(e instanceof Exception);
+        assertInstanceOf(CryptoException.class, e);
+        assertInstanceOf(Exception.class, e);
         
         // Verify it's a checked exception (not RuntimeException)
         assertNotNull(e.getMessage());

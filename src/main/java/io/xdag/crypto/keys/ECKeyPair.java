@@ -65,14 +65,9 @@ import org.apache.tuweni.bytes.Bytes32;
 public final class ECKeyPair {
     
     private final PrivateKey privateKey;
-  /**
-   * -- GETTER --
-   *  Returns the public key.
-   *
-   * @return the public key
-   */
-  @Getter
-  private final PublicKey publicKey;
+
+    @Getter
+    private final PublicKey publicKey;
     
     /**
      * Creates an ECKeyPair from a private key.
@@ -173,7 +168,7 @@ public final class ECKeyPair {
         return privateKey;
     }
 
-  /**
+    /**
      * Checks if this key pair has access to the private key.
      * 
      * @return true if the private key is available, false if this is public-key-only
@@ -203,7 +198,7 @@ public final class ECKeyPair {
     /**
      * Generates an XDAG address from this key pair's public key.
      * 
-     * @param compressed whether to use compressed public key format
+     * @param compressed whether to use the compressed public key format
      * @return the XDAG address as bytes
      */
     public Bytes toAddress(boolean compressed) {
@@ -222,16 +217,12 @@ public final class ECKeyPair {
     /**
      * Generates a Base58Check encoded XDAG address from this key pair's public key.
      * 
-     * @param compressed whether to use compressed public key format
+     * @param compressed whether to use the compressed public key format
      * @return the Base58Check encoded address
      */
     public String toBase58Address(boolean compressed) {
         return publicKey.toBase58Address(compressed);
     }
-    
-
-    
-
     
     @Override
     public boolean equals(Object obj) {

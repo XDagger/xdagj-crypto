@@ -26,7 +26,7 @@ package io.xdag.crypto.keys;
 import io.xdag.crypto.core.CryptoProvider;
 import java.math.BigInteger;
 import java.util.Objects;
-import java.util.function.Supplier;
+import lombok.Getter;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
@@ -35,7 +35,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 /**
  * Represents an ECDSA signature with recovery capability for XDAG cryptographic operations.
  * 
- * <p>This class encapsulates the three components of an ECDSA signature:
+ * <p>This class encapsulates the three parts of an ECDSA signature:
  * <ul>
  *   <li><strong>r</strong> - The r component of the signature</li>
  *   <li><strong>s</strong> - The s component of the signature</li>
@@ -60,14 +60,19 @@ public final class Signature {
     /**
      * The recovery id to reconstruct the public key used to create the signature.
      *
-     * <p>The recId is an index from 0 to 1 which indicates which of the 2 possible keys is the
+     * <p>The recId is an index from 0 to 1 that indicates which of the 2 possible keys is the
      * correct one. Because the key recovery operation yields multiple potential keys, the correct key
      * must either be stored alongside the signature, or you must be willing to try each recId in turn
      * until you find one that outputs the key you are expecting.
+     *
      */
+    @Getter
     private final byte recId;
 
+    @Getter
     private final BigInteger r;
+
+    @Getter
     private final BigInteger s;
 
     private volatile Bytes encodedCache;
@@ -120,7 +125,7 @@ public final class Signature {
 
         if (i.compareTo(curveOrder) >= 0) {
             throw new IllegalArgumentException(
-                String.format("Invalid '%s' value, should be < %s but got %s", name, curveOrder));
+                String.format("Invalid '%s' value, should be < %s but got %s", name, i, curveOrder));
         }
     }
 
@@ -129,7 +134,7 @@ public final class Signature {
      *
      * @param bytes the 65-byte encoded signature
      * @return the decoded signature
-     * @throws IllegalArgumentException if bytes length is not 65
+     * @throws IllegalArgumentException if bytes' length is not 65
      */
     public static Signature decode(final Bytes bytes) {
         if (bytes.size() != BYTES_REQUIRED) {
@@ -144,7 +149,7 @@ public final class Signature {
     }
 
     /**
-     * Decode signature from byte array.
+     * Decode signature from a byte array.
      *
      * @param bytes the 65-byte encoded signature
      * @return the decoded signature
@@ -178,33 +183,6 @@ public final class Signature {
     }
 
     /**
-     * Gets the recovery ID.
-     *
-     * @return the recovery id (0 or 1)
-     */
-    public byte getRecId() {
-        return recId;
-    }
-
-    /**
-     * Gets the r component.
-     *
-     * @return the r value
-     */
-    public BigInteger getR() {
-        return r;
-    }
-
-    /**
-     * Gets the s component.
-     *
-     * @return the s value
-     */
-    public BigInteger getS() {
-        return s;
-    }
-
-    /**
      * Gets the r component as a 32-byte array.
      * 
      * @return the r component as Bytes32
@@ -231,7 +209,7 @@ public final class Signature {
         if (bytes.length == 32) {
             return Bytes32.wrap(bytes);
         } else if (bytes.length == 33 && bytes[0] == 0) {
-            // Remove leading zero byte
+            // Remove leading zero bytes
             byte[] trimmed = new byte[32];
             System.arraycopy(bytes, 1, trimmed, 0, 32);
             return Bytes32.wrap(trimmed);
@@ -246,7 +224,7 @@ public final class Signature {
     }
 
     /**
-     * Checks if this signature is canonical (s-value is in lower half of curve order).
+     * Checks if this signature is canonical (s-value is in the lower half of curve order).
      * 
      * @return true if the signature is canonical
      */
@@ -255,16 +233,13 @@ public final class Signature {
         return s.compareTo(halfCurveOrder) <= 0;
     }
 
-
-
     @Override
     public boolean equals(final Object other) {
-        if (!(other instanceof Signature)) {
+        if (!(other instanceof Signature that)) {
             return false;
         }
 
-        final Signature that = (Signature) other;
-        return this.r.equals(that.r) && this.s.equals(that.s) && this.recId == that.recId;
+      return this.r.equals(that.r) && this.s.equals(that.s) && this.recId == that.recId;
     }
 
     @Override
@@ -274,11 +249,10 @@ public final class Signature {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Signature").append("{");
-        sb.append("r=").append(r.toString(16)).append(", ");
-        sb.append("s=").append(s.toString(16)).append(", ");
-        sb.append("recId=").append(recId);
-        return sb.append("}").toString();
+      return "Signature" + "{"
+          + "r=" + r.toString(16) + ", "
+          + "s=" + s.toString(16) + ", "
+          + "recId=" + recId
+          + "}";
     }
 } 

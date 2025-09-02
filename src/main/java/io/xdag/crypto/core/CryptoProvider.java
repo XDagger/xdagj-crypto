@@ -139,7 +139,7 @@ public final class CryptoProvider {
     /**
      * Returns the global {@link SecureRandom} instance.
      * 
-     * <p><strong>Thread Safety:</strong> SecureRandom is inherently thread-safe according to 
+     * <p><strong>Thread Safety:</strong> SecureRandom is inherently thread-safe, according to
      * Oracle's documentation. This single global instance can be safely used by multiple 
      * threads concurrently without additional synchronization.
      * 

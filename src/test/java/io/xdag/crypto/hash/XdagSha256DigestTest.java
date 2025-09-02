@@ -75,7 +75,7 @@ class XdagSha256DigestTest {
         // Reset the digest
         digest.sha256Init();
 
-        // Second hash should be independent of the first
+        // The Second hash should be independent of the first
         Bytes expected = Bytes.wrap(Arrays.reverse(HashUtils.doubleSha256(input2).toArray()));
         byte[] actual = digest.sha256Final(input2);
 
@@ -110,7 +110,7 @@ class XdagSha256DigestTest {
         Bytes part3 = Bytes.wrap("brown fox".getBytes(StandardCharsets.UTF_8));
         Bytes fullInput = Bytes.concatenate(part1, part2, part3);
 
-        // Expected result using all input at once
+        // Expected result using all inputs at once
         Bytes expected = Bytes.wrap(Arrays.reverse(HashUtils.doubleSha256(fullInput).toArray()));
 
         // Update in parts

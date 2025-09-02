@@ -38,7 +38,6 @@ package io.xdag.crypto.exception;
  * exception handling across the cryptographic library.
  */
 public class AddressFormatException extends CryptoException {
-    private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new address format exception with a default message.
@@ -80,7 +79,7 @@ public class AddressFormatException extends CryptoException {
      * 
      * @param character the invalid character found
      * @param position the position of the invalid character
-     * @return a new AddressFormatException with appropriate message
+     * @return a new AddressFormatException with the appropriate message
      */
     public static AddressFormatException invalidCharacter(char character, int position) {
         return new AddressFormatException("Invalid character '" + character + "' at position " + position);
@@ -90,7 +89,7 @@ public class AddressFormatException extends CryptoException {
      * Creates an exception for invalid data length errors.
      * 
      * @param message the detail message about the length issue
-     * @return a new AddressFormatException with appropriate message
+     * @return a new AddressFormatException with the appropriate message
      */
     public static AddressFormatException invalidDataLength(String message) {
         return new AddressFormatException("Invalid data length: " + message);
@@ -106,7 +105,7 @@ public class AddressFormatException extends CryptoException {
     }
 
     /**
-     * Creates an exception for checksum validation failures with custom message.
+     * Creates an exception for checksum validation failures with a custom message.
      * 
      * @param message the detail message about the checksum issue
      * @return a new AddressFormatException for checksum errors
