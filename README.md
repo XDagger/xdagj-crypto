@@ -7,14 +7,38 @@
 
 A production-grade cryptographic library for XDAG blockchain applications with focus on security, performance, and developer experience.
 
-## 🆕 What's New in v0.1.3
+## 🆕 What's New in v0.1.4
+
+### 🔒 Security Fix (CRITICAL)
+- **Fixed Point-at-Infinity Vulnerability**: PublicKey constructor now explicitly rejects point-at-infinity, preventing:
+  - Invalid public key creation
+  - Potential invalid XDAG addresses
+  - Signature verification failures
+  - Blockchain consensus issues
+
+### ✅ Enhanced Testing
+- **Official Test Vectors**: Added BIP-0032 (13 tests) and BIP-0039 (5 tests) official test vectors
+- **Security Tests**: New comprehensive tests for point-at-infinity and digest state validation
+- **Total Coverage**: 207 tests passing with 95%+ code coverage
+- **Quality**: All test methods follow JUnit 5 naming conventions
+
+### 📝 Documentation
+- **CHANGELOG.md**: Complete version history and change tracking
+- **Test Coverage**: Fixed BigInteger leading zero handling in hex conversion
+
+**This is a critical security update. All users should upgrade immediately.**
+
+<details>
+<summary>Previous Release: v0.1.3</summary>
 
 - **Enhanced XDAG Compatibility**: Added `PublicKey.fromXCoordinate()` method for XDAG's 32-byte x-coordinate + y-bit format
 - **Simplified AES Implementation**: AES-CBC encryption for full backward compatibility with existing xdagj wallet files
-- **Simplified HD Wallet API**: Direct key pair generation from mnemonic phrases  
+- **Simplified HD Wallet API**: Direct key pair generation from mnemonic phrases
 - **Improved Documentation**: Fixed Javadoc warnings and enhanced API documentation
 - **Optimized Dependencies**: Removed unused dependencies (tuweni-io, bcpkix-jdk18on, slf4j-simple)
 - **Corrected Documentation**: Fixed AES encryption mode descriptions to match actual implementation
+
+</details>
 
 ## 📦 Installation
 
@@ -23,13 +47,13 @@ A production-grade cryptographic library for XDAG blockchain applications with f
 <dependency>
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-crypto</artifactId>
-    <version>0.1.3</version>
+    <version>0.1.4</version>
 </dependency>
 ```
 
 ### Gradle
 ```gradle
-implementation 'io.xdag:xdagj-crypto:0.1.3'
+implementation 'io.xdag:xdagj-crypto:0.1.4'
 ```
 
 **Requirements**: Java 21+
@@ -103,22 +127,6 @@ byte[] decrypted = Aes.decrypt(cipherText, encryptionKey, iv);
 - **Consensys Tuweni**: High-performance byte operations
 - **Bouncy Castle**: Cryptographic implementations  
 - **SLF4J**: Logging framework
-
-## 📊 Key Features v0.1.3
-
-### New XDAG Compatibility
-```java
-// Create public key from XDAG's x-coordinate + y-bit format
-PublicKey xdagKey = PublicKey.fromXCoordinate(xCoordinate, yBit);
-```
-
-### Simplified HD Wallet API
-```java
-// Direct key pair generation from mnemonic
-ECKeyPair keyPair = Bip44Wallet.createKeyPairFromMnemonic(mnemonic);
-```
-
-For complete API documentation, see [JavaDoc](https://xdagger.github.io/xdagj-crypto/)
 
 ## 🏗️ Building from Source
 
