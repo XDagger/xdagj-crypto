@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 public class Base58Test {
 
     @Test
-    void testEncodeDecode() throws AddressFormatException {
+    void shouldEncodeAndDecode() throws AddressFormatException {
         byte[] testBytes = "Hello World".getBytes();
         String encoded = Base58.encode(testBytes);
         assertEquals("JxF12TrwUP45BMd", encoded);
@@ -45,7 +45,7 @@ public class Base58Test {
     }
 
     @Test
-    void testEncodeDecodeBytes() throws AddressFormatException {
+    void shouldEncodeAndDecodeBytes() throws AddressFormatException {
         Bytes testBytes = Bytes.wrap("Hello World".getBytes());
         String encoded = Base58.encode(testBytes);
         assertEquals("JxF12TrwUP45BMd", encoded);
@@ -53,32 +53,32 @@ public class Base58Test {
     }
 
     @Test
-    void testEncodeDecodeCheck() throws AddressFormatException {
+    void shouldEncodeAndDecodeCheck() throws AddressFormatException {
         byte[] testBytes = CryptoProvider.nextBytes(20); // Example payload
         String encoded = Base58.encodeCheck(testBytes);
         assertArrayEquals(testBytes, Base58.decodeCheckToArray(encoded));
     }
 
     @Test
-    void testEncodeDecodeCheckBytes() throws AddressFormatException {
+    void shouldEncodeAndDecodeCheckBytes() throws AddressFormatException {
         Bytes testBytes = Bytes.wrap(CryptoProvider.nextBytes(20));
         String encoded = Base58.encodeCheck(testBytes);
         assertEquals(testBytes, Base58.decodeCheck(encoded));
     }
 
     @Test
-    void testDecodeInvalidCharacter() {
+    void shouldRejectDecodeWithInvalidCharacter() {
         assertThrows(AddressFormatException.class, () -> Base58.decode("JxF12TrwUP45BMdO")); // Contains 'O'
     }
 
     @Test
-    void testDecodeCheckInvalidChecksum() {
+    void shouldRejectDecodeCheckWithInvalidChecksum() {
         String validBase58 = "JxF12TrwUP45BMd"; // Valid base58, but not a valid check encoding
         assertThrows(AddressFormatException.class, () -> Base58.decodeCheck(validBase58));
     }
     
     @Test
-    void testIsValid() {
+    void shouldValidateBase58Strings() {
         assertTrue(Base58.isValid("JxF12TrwUP45BMd"));
         assertFalse(Base58.isValid("JxF12TrwUP45BMdO"));
     }

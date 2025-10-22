@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 public class HashUtilsTest {
 
     @Test
-    void testSha256() {
+    void shouldComputeSha256Hash() {
         // Test vector from https://en.bitcoin.it/wiki/SHA-256
         String original = "hello world";
         Bytes originalBytes = Bytes.wrap(original.getBytes());
@@ -47,7 +47,7 @@ public class HashUtilsTest {
     }
 
     @Test
-    void testDoubleSha256() {
+    void shouldComputeDoubleSha256Hash() {
         // Test vector from bitcoin-core/qa-assets
         String original = "hello";
         Bytes originalBytes = Bytes.wrap(original.getBytes());
@@ -56,7 +56,7 @@ public class HashUtilsTest {
     }
 
     @Test
-    void testRipemd160() {
+    void shouldComputeRipemd160Hash() {
         // Test vector from https://homes.esat.kuleuven.be/~bosselae/ripemd160.html
         Bytes originalBytes = Bytes.wrap("hello world".getBytes());
         String expected = "98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f";
@@ -64,14 +64,14 @@ public class HashUtilsTest {
     }
 
     @Test
-    void testKeccak256() {
+    void shouldComputeKeccak256Hash() {
         Bytes originalBytes = Bytes.wrap("hello".getBytes());
         String expected = "1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8";
         assertEquals(expected, HashUtils.keccak256(originalBytes).toHexString().substring(2));
     }
 
     @Test
-    void testHmacSha256() {
+    void shouldComputeHmacSha256() {
         // RFC 2104 test vector
         Bytes key = Bytes.wrap("Jefe".getBytes(StandardCharsets.US_ASCII));
         Bytes data = Bytes.wrap("what do ya want for nothing?".getBytes(StandardCharsets.US_ASCII));
@@ -80,7 +80,7 @@ public class HashUtilsTest {
     }
     
     @Test
-    void testSha256hash160() {
+    void shouldComputeSha256Hash160() {
         // Bitcoin public key to address example
         Bytes pubKey = Bytes.fromHexString("0x0450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6");
         String expected = "010966776006953d5567439e5e39f86a0d273bee";
@@ -88,7 +88,7 @@ public class HashUtilsTest {
     }
     
     @Test
-    void testConstantTimeEquals() {
+    void shouldCompareInConstantTime() {
         Bytes a = Bytes.fromHexString("0x010203");
         Bytes b = Bytes.fromHexString("0x010203");
         Bytes c = Bytes.fromHexString("0x010204");

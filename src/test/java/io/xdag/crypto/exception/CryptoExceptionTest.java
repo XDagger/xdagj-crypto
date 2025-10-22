@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 public class CryptoExceptionTest {
 
     @Test
-    void testMessageConstructor() {
+    void shouldCreateExceptionWithMessage() {
         String errorMessage = "Test crypto error";
         CryptoException e = new CryptoException(errorMessage);
         assertEquals(errorMessage, e.getMessage());
@@ -40,7 +40,7 @@ public class CryptoExceptionTest {
     }
 
     @Test
-    void testMessageAndCauseConstructor() {
+    void shouldCreateExceptionWithMessageAndCause() {
         String errorMessage = "Another crypto error";
         Throwable cause = new RuntimeException("Root cause");
         CryptoException e = new CryptoException(errorMessage, cause);
@@ -49,7 +49,7 @@ public class CryptoExceptionTest {
     }
 
     @Test
-    void testCauseConstructor() {
+    void shouldCreateExceptionWithCause() {
         Throwable cause = new IllegalStateException("Underlying issue");
         CryptoException e = new CryptoException(cause);
         assertEquals(cause.toString(), e.getMessage());

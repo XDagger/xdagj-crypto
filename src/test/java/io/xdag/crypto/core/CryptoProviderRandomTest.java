@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
 public class CryptoProviderRandomTest {
 
     @Test
-    void testGetRandomBytes() {
+    void shouldGenerateRandomBytes() {
         byte[] bytes1 = CryptoProvider.nextBytes(32);
         byte[] bytes2 = CryptoProvider.nextBytes(32);
         assertEquals(32, bytes1.length);
@@ -56,7 +56,7 @@ public class CryptoProviderRandomTest {
     }
 
     @Test
-    void testGetRandomBytesEdgeCases() {
+    void shouldHandleEdgeCasesForRandomBytes() {
         assertThrows(IllegalArgumentException.class, () -> CryptoProvider.nextBytes(-1));
 
         byte[] zeroBytes = CryptoProvider.nextBytes(0);
@@ -64,7 +64,7 @@ public class CryptoProviderRandomTest {
     }
 
     @Test
-    void testGetSecureRandom() {
+    void shouldProvideSecureRandomInstance() {
         SecureRandom sr1 = CryptoProvider.getSecureRandom();
         SecureRandom sr2 = CryptoProvider.getSecureRandom();
         
@@ -75,7 +75,7 @@ public class CryptoProviderRandomTest {
     }
 
     @Test
-    void testNextInt() {
+    void shouldGenerateRandomIntegers() {
         int int1 = CryptoProvider.nextInt();
         int int2 = CryptoProvider.nextInt();
         // Should generate different random integers (probability of collision is very low)
@@ -83,7 +83,7 @@ public class CryptoProviderRandomTest {
     }
 
     @Test
-    void testNextLong() {
+    void shouldGenerateRandomLongs() {
         long long1 = CryptoProvider.nextLong();
         long long2 = CryptoProvider.nextLong();
         // Should generate different random longs (probability of collision is negligible)
@@ -91,7 +91,7 @@ public class CryptoProviderRandomTest {
     }
 
     @Test
-    void testThreadSafety() throws InterruptedException {
+    void shouldBeThreadSafe() throws InterruptedException {
         int numThreads = 10;
         int numIterations = 100;
         
@@ -120,7 +120,7 @@ public class CryptoProviderRandomTest {
     }
 
     @Test
-    void testReseed() {
+    void shouldReseedSecureRandom() {
         SecureRandom sr1 = CryptoProvider.getSecureRandom();
         
         // Reseed should not fail
@@ -133,7 +133,7 @@ public class CryptoProviderRandomTest {
     }
 
     @Test
-    void testConcurrentSecureRandomAccess() throws InterruptedException {
+    void shouldHandleConcurrentAccess() throws InterruptedException {
         int numThreads = 20;
         int numOperations = 1000;
         
