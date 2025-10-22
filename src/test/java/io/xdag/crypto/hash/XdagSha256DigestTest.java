@@ -47,7 +47,7 @@ class XdagSha256DigestTest {
     }
 
     @Test
-    void testSha256UpdateAndFinal() throws IOException {
+    void shouldUpdateAndFinalizeHash() throws IOException {
         XdagSha256Digest digest = new XdagSha256Digest();
         Bytes input1 = Bytes.wrap("hello ".getBytes(StandardCharsets.UTF_8));
         Bytes input2 = Bytes.wrap("world".getBytes(StandardCharsets.UTF_8));
@@ -64,7 +64,7 @@ class XdagSha256DigestTest {
     }
 
     @Test
-    void testSha256Init_resetsState() throws IOException {
+    void shouldResetStateAfterInit() throws IOException {
         XdagSha256Digest digest = new XdagSha256Digest();
         Bytes input1 = Bytes.wrap("first pass".getBytes(StandardCharsets.UTF_8));
         Bytes input2 = Bytes.wrap("second pass".getBytes(StandardCharsets.UTF_8));
@@ -83,7 +83,7 @@ class XdagSha256DigestTest {
     }
 
     @Test
-    void testSha256InitClearsState() throws IOException {
+    void shouldClearStateOnInit() throws IOException {
         XdagSha256Digest digest = new XdagSha256Digest();
         Bytes input = Bytes.wrap("test".getBytes(StandardCharsets.UTF_8));
         
@@ -103,7 +103,7 @@ class XdagSha256DigestTest {
     }
 
     @Test
-    void testMultipleUpdatesAndFinal() throws IOException {
+    void shouldHandleMultipleUpdatesBeforeFinalize() throws IOException {
         XdagSha256Digest digest = new XdagSha256Digest();
         Bytes part1 = Bytes.wrap("The ".getBytes(StandardCharsets.UTF_8));
         Bytes part2 = Bytes.wrap("quick ".getBytes(StandardCharsets.UTF_8));

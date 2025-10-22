@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 public class AddressFormatExceptionTest {
 
     @Test
-    void testAddressFormatExceptionConstructors() {
+    void shouldCreateAddressFormatException() {
         // Test default constructor
         AddressFormatException e1 = new AddressFormatException();
         assertEquals("Invalid address format", e1.getMessage());
@@ -54,7 +54,7 @@ public class AddressFormatExceptionTest {
     }
 
     @Test
-    void testInvalidCharacterFactoryMethod() {
+    void shouldCreateInvalidCharacterException() {
         char c = 'O';
         int pos = 5;
         AddressFormatException e = AddressFormatException.invalidCharacter(c, pos);
@@ -65,7 +65,7 @@ public class AddressFormatExceptionTest {
     }
 
     @Test
-    void testInvalidDataLengthFactoryMethod() {
+    void shouldCreateInvalidDataLengthException() {
         String message = "too short";
         AddressFormatException e = AddressFormatException.invalidDataLength(message);
         
@@ -75,7 +75,7 @@ public class AddressFormatExceptionTest {
     }
 
     @Test
-    void testInvalidChecksumFactoryMethods() {
+    void shouldCreateInvalidChecksumException() {
         // Test default checksum error
         AddressFormatException e1 = AddressFormatException.invalidChecksum();
         assertEquals("Checksum validation failed", e1.getMessage());
@@ -89,7 +89,7 @@ public class AddressFormatExceptionTest {
     }
 
     @Test
-    void testExceptionInheritance() {
+    void shouldInheritFromRuntimeException() {
         AddressFormatException e = new AddressFormatException("test");
         
         // Should inherit from CryptoException
@@ -102,7 +102,7 @@ public class AddressFormatExceptionTest {
     }
 
     @Test
-    void testFactoryMethodsReturnCorrectType() {
+    void shouldReturnCorrectExceptionType() {
         AddressFormatException e1 = AddressFormatException.invalidCharacter('X', 1);
         AddressFormatException e2 = AddressFormatException.invalidDataLength("test");
         AddressFormatException e3 = AddressFormatException.invalidChecksum();

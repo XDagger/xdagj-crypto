@@ -78,6 +78,9 @@ public final class PublicKey {
         if (point == null) {
             throw new CryptoException("Public key point cannot be null");
         }
+        if (point.isInfinity()) {
+            throw new CryptoException("Public key cannot be point at infinity");
+        }
         if (!point.isValid()) {
             throw new CryptoException("Invalid public key point");
         }

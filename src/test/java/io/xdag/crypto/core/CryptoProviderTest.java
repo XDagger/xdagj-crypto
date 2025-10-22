@@ -36,12 +36,12 @@ public class CryptoProviderTest {
     // CryptoProvider is automatically initialized via static block
 
     @Test
-    void testIsInitialized() {
+    void shouldBeInitializedByDefault() {
         assertTrue(CryptoProvider.isInstalled(), "CryptoProvider should be initialized");
     }
 
     @Test
-    void testGetCurve() {
+    void shouldReturnSecp256k1Curve() {
         ECDomainParameters curve = CryptoProvider.getCurve();
         assertNotNull(curve, "Curve parameters should not be null");
 
@@ -53,7 +53,7 @@ public class CryptoProviderTest {
     }
 
     @Test
-    void testConstants() {
+    void shouldHaveCorrectConstants() {
         assertEquals("ECDSA", CryptoProvider.ALGORITHM);
         assertEquals("BC", CryptoProvider.BOUNCY_CASTLE_PROVIDER);
         assertEquals("secp256k1", CryptoProvider.CURVE_NAME);
