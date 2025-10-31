@@ -18,6 +18,7 @@ A production-grade cryptographic library for XDAG blockchain applications with f
   - Blockchain consensus issues
 - **Zeroized HD Master Material**: `Bip44Wallet` now wipes master key material and temporary buffers immediately after use, reducing the risk of sensitive data lingering in heap memory or crash dumps.
 - **Schnorr Signatures (Preview)**: Introduced BIP340-compatible Schnorr signing and verification with official test vectors, plus conversion helpers from existing XDAG mnemonics.
+- **Dilithium Post-Quantum Signatures (Experimental)**: Added Dilithium key generation, signing, and mnemonic-derived key support to explore quantum-resistant workflows.
 
 ### ✅ Enhanced Testing
 - **Official Test Vectors**: Added BIP-0032 (13 tests) and BIP-0039 (5 tests) official test vectors
@@ -123,6 +124,20 @@ SchnorrSignature schnorrSignature = SchnorrSigner.sign(message, schnorrKeyPair);
 boolean schnorrValid = SchnorrSigner.verify(message, schnorrSignature, schnorrKeyPair.getPublicKey());
 ```
 
+### 5. Dilithium Post-Quantum Signatures
+
+```java
+import io.xdag.crypto.bip.Bip44Wallet;
+import io.xdag.crypto.postquantum.dilithium.*;
+import org.apache.tuweni.bytes.Bytes;
+
+DilithiumKeyPair pqKeyPair = Bip44Wallet.createDilithiumKeyPairFromMnemonic(mnemonic);
+
+Bytes message = Bytes.fromUtf8String("XDAG post-quantum test");
+DilithiumSignature pqSignature = DilithiumSigner.sign(message, pqKeyPair);
+boolean pqValid = DilithiumSigner.verify(message, pqSignature, pqKeyPair);
+```
+
 ## 🏗️ Core Features
 
 - **Elliptic Curve Cryptography**: ECDSA with secp256k1 curve
@@ -132,6 +147,7 @@ boolean schnorrValid = SchnorrSigner.verify(message, schnorrSignature, schnorrKe
 - **Address Generation**: XDAG-compatible Base58 addresses
 - **XDAG Integration**: Native support for XDAG public key formats
 - **Schnorr Signatures**: BIP340 signing and verification with mnemonic-derived key pairs
+- **Post-Quantum Signatures**: Dilithium (NIST PQC) signing and verification with deterministic mnemonic integration
 
 ## 🛡️ Security
 

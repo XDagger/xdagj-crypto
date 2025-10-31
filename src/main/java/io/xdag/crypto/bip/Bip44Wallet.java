@@ -29,6 +29,8 @@ import io.xdag.crypto.exception.CryptoException;
 import io.xdag.crypto.hash.HashUtils;
 import io.xdag.crypto.keys.ECKeyPair;
 import io.xdag.crypto.keys.PrivateKey;
+import io.xdag.crypto.postquantum.dilithium.DilithiumKeyPair;
+import io.xdag.crypto.postquantum.dilithium.DilithiumParameter;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -275,6 +277,78 @@ public final class Bip44Wallet {
     public static SchnorrKeyPair createSchnorrKeyPairFromMnemonic(String mnemonic, String passphrase)
             throws CryptoException {
         return SchnorrKeyPair.fromECKeyPair(createKeyPairFromMnemonic(mnemonic, passphrase));
+    }
+
+    /**
+     * Creates a Dilithium (post-quantum) key pair from a seed.
+     *
+     * @param seed the seed material (typically BIP39 seed bytes)
+     * @return a DilithiumKeyPair using the default parameter set
+     * @throws CryptoException if generation fails
+     */
+    public static DilithiumKeyPair createDilithiumKeyPair(byte[] seed) throws CryptoException {
+        return createDilithiumKeyPair(seed, DilithiumParameter.DEFAULT);
+    }
+
+    /**
+     * Creates a Dilithium (post-quantum) key pair from a seed and parameter set.
+     *
+     * @param seed seed material
+     * @param parameter Dilithium parameter set
+     * @return a Dilithium key pair
+     * @throws CryptoException if generation fails
+     */
+    public static DilithiumKeyPair createDilithiumKeyPair(byte[] seed, DilithiumParameter parameter)
+            throws CryptoException {
+        if (seed == null || seed.length == 0) {
+            throw new CryptoException("Seed cannot be null or empty");
+        }
+        if (parameter == null) {
+            throw new CryptoException("Dilithium parameter cannot be null");
+        }
+
+        byte[] seedCopy = Arrays.copyOf(seed, seed.length);
+        try {
+            return DilithiumKeyPair.fromSeed(Bytes.wrap(seedCopy), parameter);
+        } finally {
+            Arrays.fill(seedCopy, (byte) 0);
+        }
+    }
+
+    /**
+     * Creates a Dilithium key pair directly from a mnemonic phrase.
+     */
+    public static DilithiumKeyPair createDilithiumKeyPairFromMnemonic(String mnemonic) throws CryptoException {
+        return createDilithiumKeyPairFromMnemonic(mnemonic, "");
+    }
+
+    /**
+     * Creates a Dilithium key pair directly from a mnemonic phrase and passphrase.
+     */
+    public static DilithiumKeyPair createDilithiumKeyPairFromMnemonic(String mnemonic, String passphrase)
+            throws CryptoException {
+        return createDilithiumKeyPairFromMnemonic(mnemonic, passphrase, DilithiumParameter.DEFAULT);
+    }
+
+    /**
+     * Creates a Dilithium key pair from mnemonic, passphrase and parameter set.
+     */
+    public static DilithiumKeyPair createDilithiumKeyPairFromMnemonic(
+            String mnemonic, String passphrase, DilithiumParameter parameter) throws CryptoException {
+        if (mnemonic == null || mnemonic.trim().isEmpty()) {
+            throw new CryptoException("Mnemonic cannot be null or empty");
+        }
+        if (parameter == null) {
+            throw new CryptoException("Dilithium parameter cannot be null");
+        }
+
+        Bytes seed = Bip39Mnemonic.toSeed(mnemonic, passphrase);
+        byte[] seedArray = seed.toArrayUnsafe();
+        try {
+            return DilithiumKeyPair.fromSeed(seed, parameter);
+        } finally {
+            Arrays.fill(seedArray, (byte) 0);
+        }
     }
 
     /**
