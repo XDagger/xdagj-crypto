@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.4] - 2025-10-22
 
 ### Security
+- **CRITICAL**: Hardened SecureRandom selection to prefer platform `getInstanceStrong()` (or BC DRBG) and removed SHA1PRNG fallback, guaranteeing modern entropy for all cryptographic material
+- **CRITICAL**: Zeroized HD wallet master key material and temporary buffers after derivation to prevent sensitive-data leakage in memory dumps
 - **CRITICAL**: Fixed PublicKey constructor accepting point-at-infinity
   - Point-at-infinity is now explicitly rejected before validation
   - Prevents creation of invalid public keys that could lead to:

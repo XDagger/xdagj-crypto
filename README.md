@@ -10,11 +10,13 @@ A production-grade cryptographic library for XDAG blockchain applications with f
 ## 🆕 What's New in v0.1.4
 
 ### 🔒 Security Fix (CRITICAL)
+- **Hardened Secure Randomness**: Replaced legacy SHA1PRNG fallback with platform-strong DRBG (or BC DRBG) and retained default SecureRandom as final fallback, ensuring all keys, nonces, and mnemonics use modern entropy sources.
 - **Fixed Point-at-Infinity Vulnerability**: PublicKey constructor now explicitly rejects point-at-infinity, preventing:
   - Invalid public key creation
   - Potential invalid XDAG addresses
   - Signature verification failures
   - Blockchain consensus issues
+- **Zeroized HD Master Material**: `Bip44Wallet` now wipes master key material and temporary buffers immediately after use, reducing the risk of sensitive data lingering in heap memory or crash dumps.
 
 ### ✅ Enhanced Testing
 - **Official Test Vectors**: Added BIP-0032 (13 tests) and BIP-0039 (5 tests) official test vectors
