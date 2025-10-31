@@ -7,7 +7,7 @@
 
 A production-grade cryptographic library for XDAG blockchain applications with focus on security, performance, and developer experience.
 
-## 🆕 What's New in v0.1.4
+## 🆕 What's New in v0.1.5
 
 ### 🔒 Security Fix (CRITICAL)
 - **Hardened Secure Randomness**: Replaced legacy SHA1PRNG fallback with platform-strong DRBG (or BC DRBG) and retained default SecureRandom as final fallback, ensuring all keys, nonces, and mnemonics use modern entropy sources.
@@ -51,13 +51,13 @@ A production-grade cryptographic library for XDAG blockchain applications with f
 <dependency>
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-crypto</artifactId>
-    <version>0.1.4</version>
+    <version>0.1.5</version>
 </dependency>
 ```
 
 ### Gradle
 ```gradle
-implementation 'io.xdag:xdagj-crypto:0.1.4'
+implementation 'io.xdag:xdagj-crypto:0.1.5'
 ```
 
 **Requirements**: Java 21+

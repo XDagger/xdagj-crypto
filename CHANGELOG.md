@@ -63,16 +63,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- BIP340 Schnorr signature support with official test vectors and seamless integration with existing XDAG mnemonic workflows
-- Experimental Dilithium (post-quantum) signature support with deterministic key derivation from XDAG mnemonics
+- _TBD_
 
 ### Planned
 - Strengthen validation in `Signer.decompressKey()` for edge cases
 - Replace magic numbers with named constants for better maintainability
 - Consider professional cryptographic audit for production use
 
+## [0.1.5] - 2025-10-31
+
+### Added
+- BIP340 Schnorr signature support with official test vectors and seamless integration with existing XDAG mnemonic workflows
+- Experimental Dilithium (post-quantum) signature support with deterministic key derivation from XDAG mnemonics
+
 ---
 
+[0.1.5]: https://github.com/XDagger/xdagj-crypto/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/XDagger/xdagj-crypto/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/XDagger/xdagj-crypto/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/XDagger/xdagj-crypto/releases/tag/v0.1.2
