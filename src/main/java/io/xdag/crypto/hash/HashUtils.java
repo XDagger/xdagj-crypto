@@ -32,6 +32,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -151,6 +152,30 @@ public final class HashUtils {
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
         return Bytes32.wrap(hash);
+    }
+
+    /**
+     * Compute SHAKE-256 extendable-output hash for the given input.
+     *
+     * @param input the data to hash
+     * @param outputLength the desired number of output bytes (must be positive)
+     * @return the SHAKE-256 hash as {@link Bytes}
+     */
+    public static Bytes shake256(Bytes input, int outputLength) {
+        if (input == null) {
+            throw new IllegalArgumentException("Input cannot be null");
+        }
+        if (outputLength <= 0) {
+            throw new IllegalArgumentException("Output length must be positive");
+        }
+
+        SHAKEDigest digest = new SHAKEDigest(256);
+        byte[] inputArray = input.toArrayUnsafe();
+        digest.update(inputArray, 0, inputArray.length);
+
+        byte[] output = new byte[outputLength];
+        digest.doFinal(output, 0, outputLength);
+        return Bytes.wrap(output);
     }
 
     /**
