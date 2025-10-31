@@ -24,6 +24,7 @@
 package io.xdag.crypto.keys;
 
 import io.xdag.crypto.exception.CryptoException;
+import io.xdag.crypto.schnorr.SchnorrKeyPair;
 import java.util.Objects;
 import lombok.Getter;
 import org.apache.tuweni.bytes.Bytes;
@@ -222,6 +223,19 @@ public final class ECKeyPair {
      */
     public String toBase58Address(boolean compressed) {
         return publicKey.toBase58Address(compressed);
+    }
+
+    /**
+     * Converts this EC key pair to a Schnorr key pair following BIP340 requirements.
+     *
+     * @return a corresponding {@link SchnorrKeyPair}
+     * @throws CryptoException if this key pair does not include a private key
+     */
+    public SchnorrKeyPair toSchnorrKeyPair() throws CryptoException {
+        if (!hasPrivateKey()) {
+            throw new IllegalStateException("Cannot create Schnorr key pair without private key");
+        }
+        return SchnorrKeyPair.fromPrivateKey(privateKey);
     }
     
     @Override

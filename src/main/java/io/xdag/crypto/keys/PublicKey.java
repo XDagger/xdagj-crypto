@@ -30,7 +30,9 @@ import java.math.BigInteger;
 import java.util.Objects;
 import lombok.Getter;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.bouncycastle.math.ec.ECPoint;
+import java.util.Arrays;
 
 /**
  * Represents an elliptic curve public key for XDAG cryptographic operations.
@@ -187,6 +189,33 @@ public final class PublicKey {
         return toCompressedBytes();
     }
     
+    /**
+     * Returns the x-only 32-byte representation of this public key (as used by BIP340 Schnorr signatures).
+     *
+     * @return the x coordinate as {@link Bytes32}
+     */
+    public Bytes32 toXOnlyBytes() {
+        byte[] xBytes = point.getAffineXCoord().getEncoded();
+        if (xBytes.length == 32) {
+            return Bytes32.wrap(xBytes);
+        } else if (xBytes.length > 32) {
+            return Bytes32.wrap(Arrays.copyOfRange(xBytes, xBytes.length - 32, xBytes.length));
+        } else {
+            byte[] padded = new byte[32];
+            System.arraycopy(xBytes, 0, padded, 32 - xBytes.length, xBytes.length);
+            return Bytes32.wrap(padded);
+        }
+    }
+
+    /**
+     * Indicates whether the affine y-coordinate of this public key is even.
+     *
+     * @return true if the y coordinate is even, false otherwise
+     */
+    public boolean hasEvenY() {
+        return !point.getAffineYCoord().toBigInteger().testBit(0);
+    }
+
     /**
      * Returns the public key as hex string with 0x prefix (compressed format).
      * 

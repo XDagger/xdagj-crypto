@@ -37,6 +37,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import io.xdag.crypto.schnorr.SchnorrKeyPair;
 
 /**
  * BIP44 Hierarchical Deterministic (HD) Wallet implementation for XDAG.
@@ -239,6 +240,41 @@ public final class Bip44Wallet {
         
         Bytes seed = Bip39Mnemonic.toSeed(mnemonic, passphrase);
         return createKeyPair(seed.toArrayUnsafe());
+    }
+
+    /**
+     * Creates a Schnorr key pair from a seed without exposing BIP32 hierarchy information.
+     *
+     * @param seed the cryptographic seed (typically 64 bytes from BIP39)
+     * @return a SchnorrKeyPair suitable for BIP340 signatures
+     * @throws CryptoException if key generation fails
+     */
+    public static SchnorrKeyPair createSchnorrKeyPair(byte[] seed) throws CryptoException {
+        return SchnorrKeyPair.fromECKeyPair(createKeyPair(seed));
+    }
+
+    /**
+     * Creates a Schnorr key pair directly from a BIP39 mnemonic phrase.
+     *
+     * @param mnemonic the BIP39 mnemonic phrase
+     * @return a SchnorrKeyPair for BIP340 signing
+     * @throws CryptoException if mnemonic is invalid or key generation fails
+     */
+    public static SchnorrKeyPair createSchnorrKeyPairFromMnemonic(String mnemonic) throws CryptoException {
+        return SchnorrKeyPair.fromECKeyPair(createKeyPairFromMnemonic(mnemonic));
+    }
+
+    /**
+     * Creates a Schnorr key pair directly from a BIP39 mnemonic and optional passphrase.
+     *
+     * @param mnemonic the mnemonic phrase
+     * @param passphrase the optional passphrase
+     * @return a SchnorrKeyPair for BIP340 signing
+     * @throws CryptoException if mnemonic is invalid or key generation fails
+     */
+    public static SchnorrKeyPair createSchnorrKeyPairFromMnemonic(String mnemonic, String passphrase)
+            throws CryptoException {
+        return SchnorrKeyPair.fromECKeyPair(createKeyPairFromMnemonic(mnemonic, passphrase));
     }
 
     /**
