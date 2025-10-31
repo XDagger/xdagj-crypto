@@ -17,6 +17,7 @@ A production-grade cryptographic library for XDAG blockchain applications with f
   - Signature verification failures
   - Blockchain consensus issues
 - **Zeroized HD Master Material**: `Bip44Wallet` now wipes master key material and temporary buffers immediately after use, reducing the risk of sensitive data lingering in heap memory or crash dumps.
+- **Schnorr Signatures (Preview)**: Introduced BIP340-compatible Schnorr signing and verification with official test vectors, plus conversion helpers from existing XDAG mnemonics.
 
 ### ✅ Enhanced Testing
 - **Official Test Vectors**: Added BIP-0032 (13 tests) and BIP-0039 (5 tests) official test vectors
@@ -107,6 +108,21 @@ byte[] cipherText = Aes.encrypt(plainText, encryptionKey, iv);
 byte[] decrypted = Aes.decrypt(cipherText, encryptionKey, iv);
 ```
 
+### 4. Schnorr Signatures (BIP340)
+
+```java
+import io.xdag.crypto.bip.Bip44Wallet;
+import io.xdag.crypto.schnorr.*;
+import org.apache.tuweni.bytes.Bytes;
+
+String mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+SchnorrKeyPair schnorrKeyPair = Bip44Wallet.createSchnorrKeyPairFromMnemonic(mnemonic);
+
+Bytes message = Bytes.fromHexString("0x243f6a8885a308d313198a2e03707344a4093822299f31d0082efa98ec4e6c89");
+SchnorrSignature schnorrSignature = SchnorrSigner.sign(message, schnorrKeyPair);
+boolean schnorrValid = SchnorrSigner.verify(message, schnorrSignature, schnorrKeyPair.getPublicKey());
+```
+
 ## 🏗️ Core Features
 
 - **Elliptic Curve Cryptography**: ECDSA with secp256k1 curve
@@ -115,6 +131,7 @@ byte[] decrypted = Aes.decrypt(cipherText, encryptionKey, iv);
 - **Hash Functions**: SHA-256, RIPEMD-160, HMAC operations
 - **Address Generation**: XDAG-compatible Base58 addresses
 - **XDAG Integration**: Native support for XDAG public key formats
+- **Schnorr Signatures**: BIP340 signing and verification with mnemonic-derived key pairs
 
 ## 🛡️ Security
 

@@ -62,6 +62,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- BIP340 Schnorr signature support with official test vectors and seamless integration with existing XDAG mnemonic workflows
+
 ### Planned
 - Strengthen validation in `Signer.decompressKey()` for edge cases
 - Replace magic numbers with named constants for better maintainability

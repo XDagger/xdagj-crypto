@@ -23,8 +23,10 @@
  */
 package io.xdag.crypto.hash;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -96,6 +98,40 @@ public final class HashUtils {
     public static Bytes32 doubleSha256(Bytes input) {
         Bytes32 firstHash = sha256(input);
         return sha256(firstHash);
+    }
+
+    /**
+     * Computes a tagged hash as defined in BIP-340.
+     *
+     * <p>The tagged hash is calculated as SHA256(SHA256(tag) || SHA256(tag) || data...). This
+     * construction provides domain separation for different protocol contexts.</p>
+     *
+     * @param tag the domain separation tag
+     * @param data the data chunks to hash
+     * @return the tagged hash as {@link Bytes32}
+     * @throws IllegalArgumentException if the tag is null or empty, or data contains null values
+     */
+    public static Bytes32 taggedHash(String tag, Bytes... data) {
+        if (tag == null || tag.isEmpty()) {
+            throw new IllegalArgumentException("Tag cannot be null or empty");
+        }
+
+        Objects.requireNonNull(data, "Data array cannot be null");
+
+        Bytes tagBytes = Bytes.wrap(tag.getBytes(StandardCharsets.UTF_8));
+        Bytes32 tagHash = sha256(tagBytes);
+
+        Bytes[] inputs = new Bytes[data.length + 2];
+        inputs[0] = tagHash;
+        inputs[1] = tagHash;
+        for (int i = 0; i < data.length; i++) {
+            if (data[i] == null) {
+                throw new IllegalArgumentException("Data entry " + i + " cannot be null");
+            }
+            inputs[i + 2] = data[i];
+        }
+
+        return sha256(Bytes.concatenate(inputs));
     }
 
     /**
