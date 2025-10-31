@@ -136,17 +136,25 @@ public final class Bip44Wallet {
         }
 
         byte[] masterKeyMaterial = deriveMasterKeyMaterial(seed);
-        
-        // Split result: first 32 bytes = private key, last 32 bytes = chain code
-        BigInteger privateKey = new BigInteger(1, Arrays.copyOfRange(masterKeyMaterial, 0, 32));
-        if (!KeyValidator.isValidDerivedKeyRange(privateKey)) {
-            throw new CryptoException("Invalid master private key generated");
+
+        try {
+            byte[] privateKeyBytes = Arrays.copyOfRange(masterKeyMaterial, 0, 32);
+            try {
+                BigInteger privateKey = new BigInteger(1, privateKeyBytes);
+                if (!KeyValidator.isValidDerivedKeyRange(privateKey)) {
+                    throw new CryptoException("Invalid master private key generated");
+                }
+
+                ECKeyPair masterKeyPair = ECKeyPair.fromPrivateKey(PrivateKey.fromBigInteger(privateKey));
+                Bytes32 chainCode = Bytes32.wrap(Arrays.copyOfRange(masterKeyMaterial, 32, 64));
+
+                return new Bip32Key(masterKeyPair, chainCode, 0, 0, Bytes.EMPTY);
+            } finally {
+                Arrays.fill(privateKeyBytes, (byte) 0);
+            }
+        } finally {
+            Arrays.fill(masterKeyMaterial, (byte) 0);
         }
-
-        ECKeyPair masterKeyPair = ECKeyPair.fromPrivateKey(PrivateKey.fromBigInteger(privateKey));
-        Bytes32 chainCode = Bytes32.wrap(Arrays.copyOfRange(masterKeyMaterial, 32, 64));
-
-        return new Bip32Key(masterKeyPair, chainCode, 0, 0, Bytes.EMPTY);
     }
 
     /**
@@ -169,14 +177,22 @@ public final class Bip44Wallet {
         }
 
         byte[] masterKeyMaterial = deriveMasterKeyMaterial(seed);
-        
-        // Only extract the private key part, ignore chain code for simple usage
-        BigInteger privateKey = new BigInteger(1, Arrays.copyOfRange(masterKeyMaterial, 0, 32));
-        if (!KeyValidator.isValidDerivedKeyRange(privateKey)) {
-            throw new CryptoException("Invalid master private key generated");
-        }
 
-        return ECKeyPair.fromPrivateKey(PrivateKey.fromBigInteger(privateKey));
+        try {
+            byte[] privateKeyBytes = Arrays.copyOfRange(masterKeyMaterial, 0, 32);
+            try {
+                BigInteger privateKey = new BigInteger(1, privateKeyBytes);
+                if (!KeyValidator.isValidDerivedKeyRange(privateKey)) {
+                    throw new CryptoException("Invalid master private key generated");
+                }
+
+                return ECKeyPair.fromPrivateKey(PrivateKey.fromBigInteger(privateKey));
+            } finally {
+                Arrays.fill(privateKeyBytes, (byte) 0);
+            }
+        } finally {
+            Arrays.fill(masterKeyMaterial, (byte) 0);
+        }
     }
 
     /**

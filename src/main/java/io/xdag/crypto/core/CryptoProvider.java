@@ -253,25 +253,25 @@ public final class CryptoProvider {
      * @return a new configured {@link SecureRandom} instance
      */
     private static SecureRandom createSecureRandom() {
-        // Try Bouncy Castle's SHA1PRNG first (more widely supported than DRBG)
+        // Prefer the platform's strongest available implementation (SP800-90 compliant when present)
         try {
-            SecureRandom random = SecureRandom.getInstance("SHA1PRNG", BOUNCY_CASTLE_PROVIDER);
-            log.info("Using SHA1PRNG algorithm from Bouncy Castle provider.");
-            return random;
-        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-            log.debug("Bouncy Castle SHA1PRNG not available. Trying platform default.", e);
-        }
-
-        // Try the default platform implementation
-        try {
-            SecureRandom random = SecureRandom.getInstanceStrong();
-            log.info("Using platform's strong SecureRandom implementation.");
-            return random;
+            SecureRandom strong = SecureRandom.getInstanceStrong();
+            log.info("Using platform strong SecureRandom implementation.");
+            return strong;
         } catch (NoSuchAlgorithmException e) {
-            log.debug("Strong SecureRandom not available. Using default.", e);
+            log.debug("Strong SecureRandom not available. Falling back to provider-specific options.", e);
         }
 
-        // Fallback to the simplest but still secure SecureRandom
+        // Try Bouncy Castle DRBG if available for consistent cross-platform behaviour
+        try {
+            SecureRandom drbg = SecureRandom.getInstance("DRBG", BOUNCY_CASTLE_PROVIDER);
+            log.info("Using Bouncy Castle DRBG SecureRandom implementation.");
+            return drbg;
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+            log.debug("Bouncy Castle DRBG not available. Falling back to default SecureRandom.", e);
+        }
+
+        // Fallback to the default SecureRandom implementation, which is still cryptographically secure
         SecureRandom random = new SecureRandom();
         log.info("Using platform default SecureRandom implementation.");
         return random;
